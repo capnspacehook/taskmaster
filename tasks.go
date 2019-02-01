@@ -18,6 +18,7 @@ func handle(err error) {
 	}
 }
 
+// GetRegisteredTasks
 func GetRegisteredTasks() ([]ScheduledTask, error) {
 	var err error
 
@@ -42,7 +43,7 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 		case 0x80070005:
 			return nil, errors.New("access is denied to connect to the task scheduler service")
 		case 0x80041315:
-			return nil, errors.New("The task scheduler service is not running")
+			return nil, errors.New("the task scheduler service is not running")
 		case 0x8007000e:
 			return nil, errors.New("the application does not have enough memory to complete the operation")
 		case 53:
@@ -72,26 +73,7 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 			task := v.ToIDispatch()
 			defer task.Release()
 
-			name := oleutil.MustGetProperty(task, "Name").ToString()
-			path := oleutil.MustGetProperty(task, "Path").ToString()
-			enabled := oleutil.MustGetProperty(task, "Enabled").Value().(bool)
-			state := int(oleutil.MustGetProperty(task, "State").Val)
-			missedRuns := int(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
-			nextRunTime := oleutil.MustGetProperty(task, "NextRunTime").Value().(time.Time)
-			lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
-			lastTaskResult := int(oleutil.MustGetProperty(task, "LastTaskResult").Val)
-
-			scheduledTask := ScheduledTask{
-				Name:			name,
-				Path:			path,
-				Enabled:		enabled,
-				State:			state,
-				MissedRuns:		missedRuns,
-				NextRunTime:	nextRunTime,
-				LastRunTime:	lastRunTime,
-				LastTaskResult:	lastTaskResult,
-			}
-
+			scheduledTask, _ := parseTask(task)
 			scheduledTasks = append(scheduledTasks, scheduledTask)
 
 			return nil
@@ -108,4 +90,28 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 	oleutil.ForEach(taskFolderList, enumTaskFolders)
 
 	return scheduledTasks, nil
+}
+
+func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
+	name := oleutil.MustGetProperty(task, "Name").ToString()
+	path := oleutil.MustGetProperty(task, "Path").ToString()
+	enabled := oleutil.MustGetProperty(task, "Enabled").Value().(bool)
+	state := int(oleutil.MustGetProperty(task, "State").Val)
+	missedRuns := int(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
+	nextRunTime := oleutil.MustGetProperty(task, "NextRunTime").Value().(time.Time)
+	lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
+	lastTaskResult := int(oleutil.MustGetProperty(task, "LastTaskResult").Val)
+
+	scheduledTask := ScheduledTask{
+		Name:			name,
+		Path:			path,
+		Enabled:		enabled,
+		State:			state,
+		MissedRuns:		missedRuns,
+		NextRunTime:	nextRunTime,
+		LastRunTime:	lastRunTime,
+		LastTaskResult:	lastTaskResult,
+	}
+
+	return scheduledTask, nil
 }
