@@ -2,6 +2,8 @@ package taskmaster
 
 import (
 	"time"
+
+	"github.com/go-ole/go-ole"
 )
 
 const (
@@ -13,13 +15,34 @@ const (
 )
 
 const (
-	TASK_ACTION_EXEC = 0
-	TASK_ACTION_COM_HANDLER = 5
-	TASK_ACTION_SEND_EMAIL
-	TASK_ACTION_SHOW_MESSAGE
+	TASK_LOGON_NONE = iota
+	TASK_LOGON_PASSWORD
+	TASK_LOGON_S4U
+	TASK_LOGON_INTERACTIVE_TOKEN
+	TASK_LOGON_GROUP
+	TASK_LOGON_SERVICE_ACCOUNT
+	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD
 )
 
-type ScheduledTask struct {
+const (
+	TASK_RUNLEVEL_LUA = iota
+  	TASK_RUNLEVEL_HIGHEST
+)
+
+const (
+	TASK_ACTION_EXEC = 0
+	TASK_ACTION_SEND_EMAIL = 1
+	TASK_ACTION_SHOW_MESSAGE =2
+	TASK_ACTION_COM_HANDLER = 5
+)
+
+type TaskService struct {
+	taskServiceObj 	*ole.IDispatch
+	isInitialized	bool
+}
+
+type RegisteredTask struct {
+	taskObj			*ole.IDispatch
 	Name			string
 	Path			string
 	Definition 		Definition
@@ -34,7 +57,7 @@ type ScheduledTask struct {
 type Definition struct {
 	Actions				ActionCollection
 	Data				string
-	Principal			Principle
+	Principal			Principal
 	RegistrationInfo	RegistrationInfo
 	Settings			TaskSettings
 	Triggers			[]Trigger
@@ -81,8 +104,13 @@ type MessageAction struct {
 	Message string
 }
 
-type Principle struct {
-
+type Principal struct {
+	Name		string
+	GroupID		string
+	ID			string
+	LogonType	int
+	RunLevel	int
+	UserID		string
 }
 
 type RegistrationInfo struct {

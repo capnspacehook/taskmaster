@@ -12,54 +12,76 @@ const (
 	TASK_ENUM_HIDDEN = 1
 )
 
-// GetRegisteredTasks returns a list of registered scheduled tasks
-func GetRegisteredTasks() ([]ScheduledTask, error) {
+func (t *TaskService) initialize() error {
 	var err error
 
 	err = ole.CoInitialize(0)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer ole.CoUninitialize()
 
 	schedClassID, err := ole.ClassIDFrom("Schedule.Service.1")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	taskSchedulerObj, err := ole.CreateInstance(schedClassID, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if taskSchedulerObj == nil {
-		return nil, errors.New("Could not create ITaskService object")
+		return errors.New("Could not create ITaskService object")
 	}
 	defer taskSchedulerObj.Release()
 
 	tskSchdlr := taskSchedulerObj.MustQueryInterface(ole.IID_IDispatch)
-	defer tskSchdlr.Release()
-	connectResult := oleutil.MustCallMethod(tskSchdlr, "Connect").Val
-	if connectResult != 0 {
-		switch connectResult {
-		case 0x80070005:
-			return nil, errors.New("access is denied to connect to the task scheduler service")
-		case 0x80041315:
-			return nil, errors.New("the task scheduler service is not running")
-		case 0x8007000e:
-			return nil, errors.New("the application does not have enough memory to complete the operation")
-		case 53:
-			return nil, errors.New("the computer name specified in the serverName parameter does not exist")
-		case 50:
-			return nil, errors.New("the remote computer does not support remote task scheduling")
+	t.taskServiceObj = tskSchdlr
+	t.isInitialized = true
+
+	return nil
+}
+
+func (t *TaskService) Connect() error {
+	if !t.isInitialized {
+		err := t.initialize()
+		if err != nil {
+			return err
 		}
 	}
 
-	taskFolder := oleutil.MustCallMethod(tskSchdlr, "GetFolder", "\\").ToIDispatch()
+	connectResult := oleutil.MustCallMethod(t.taskServiceObj, "Connect").Val
+	if connectResult != 0 {
+		switch connectResult {
+		case 0x80070005:
+			return errors.New("access is denied to connect to the task scheduler service")
+		case 0x80041315:
+			return errors.New("the task scheduler service is not running")
+		case 0x8007000e:
+			return errors.New("the application does not have enough memory to complete the operation")
+		case 53:
+			return errors.New("the computer name specified in the serverName parameter does not exist")
+		case 50:
+			return errors.New("the remote computer does not support remote task scheduling")
+		}
+	}
+
+	return nil
+}
+
+func (t *TaskService) Disconnect() {
+	ole.CoUninitialize()
+}
+
+// GetRegisteredTasks returns a list of registered scheduled tasks
+func (t *TaskService) GetRegisteredTasks() ([]RegisteredTask, error) {
+	var err error
+
+	taskFolder := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
 	defer taskFolder.Release()
 
 	taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
 	defer taskFolderList.Release()
 
-	var scheduledTasks []ScheduledTask
+	var registeredTasks []RegisteredTask
 
 	var enumTaskFolders func(*ole.VARIANT) error
 	enumTaskFolders = func (v *ole.VARIANT) error {
@@ -71,10 +93,12 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 
 		oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
 			task := v.ToIDispatch()
-			defer task.Release()
 
-			scheduledTask, _ := parseTask(task)
-			scheduledTasks = append(scheduledTasks, scheduledTask)
+			registeredTask, err := parseTask(task)
+			if err != nil {
+				return err
+			}
+			registeredTasks = append(registeredTasks, registeredTask)
 
 			return nil
 		})
@@ -92,10 +116,10 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 		return nil, err
 	}
 
-	return scheduledTasks, nil
+	return registeredTasks, nil
 }
 
-func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
+func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	var err error
 
 	name := oleutil.MustGetProperty(task, "Name").ToString()
@@ -128,8 +152,12 @@ func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
 		return nil
 	})
 	if err != nil {
-		return ScheduledTask{}, err
+		return RegisteredTask{}, err
 	}
+
+	principal := oleutil.MustGetProperty(definition, "Principal").ToIDispatch()
+	defer principal.Release()
+	taskPrincipal := parsePrincipal(principal)
 
 	actionCollection := ActionCollection{
 		Context:	context,
@@ -138,9 +166,11 @@ func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
 
 	taskDef := Definition{
 		Actions:	actionCollection,
+		Principal: 	taskPrincipal,
 	}
 
-	scheduledTask := ScheduledTask{
+	RegisteredTask := RegisteredTask{
+		taskObj:		task,
 		Name:			name,
 		Path:			path,
 		Definition:		taskDef,
@@ -152,7 +182,7 @@ func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
 		LastTaskResult:	lastTaskResult,
 	}
 
-	return scheduledTask, nil
+	return RegisteredTask, nil
 }
 
 func parseTaskAction(action *ole.IDispatch) (interface{}, error) {
@@ -189,6 +219,24 @@ func parseTaskAction(action *ole.IDispatch) (interface{}, error) {
 	default:
 		return nil, errors.New("unsupported IAction type")
 	}
+}
 
-	return nil, nil
+func parsePrincipal(taskDef *ole.IDispatch) Principal {
+	name := oleutil.MustGetProperty(taskDef, "DisplayName").ToString()
+	groupID := oleutil.MustGetProperty(taskDef, "GroupId").ToString()
+	id := oleutil.MustGetProperty(taskDef, "Id").ToString()
+	logonType := int(oleutil.MustGetProperty(taskDef, "LogonType").Val)
+	runLevel := int(oleutil.MustGetProperty(taskDef, "RunLevel").Val)
+	userID := oleutil.MustGetProperty(taskDef, "UserId").ToString()
+
+	principle := Principal{
+		Name:		name,
+		GroupID: 	groupID,
+		ID:			id,
+		LogonType:	logonType,
+		RunLevel:	runLevel,
+		UserID:		userID,
+	}
+
+	return principle
 }
