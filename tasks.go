@@ -9,29 +9,29 @@ import (
 )
 
 const (
-	TASK_ENUM_HIDDEN = 0x1
+	TASK_ENUM_HIDDEN = 1
 )
 
-func handle(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-// GetRegisteredTasks
+// GetRegisteredTasks returns a list of registered scheduled tasks
 func GetRegisteredTasks() ([]ScheduledTask, error) {
 	var err error
 
 	err = ole.CoInitialize(0)
-	handle(err)
+	if err != nil {
+		return nil, err
+	}
 	defer ole.CoUninitialize()
 
 	schedClassID, err := ole.ClassIDFrom("Schedule.Service.1")
-	handle(err)
+	if err != nil {
+		return nil, err
+	}
 	taskSchedulerObj, err := ole.CreateInstance(schedClassID, nil)
-	handle(err)
+	if err != nil {
+		return nil, err
+	}
 	if taskSchedulerObj == nil {
-		panic("Could not create object")
+		return nil, errors.New("Could not create ITaskService object")
 	}
 	defer taskSchedulerObj.Release()
 
@@ -87,12 +87,17 @@ func GetRegisteredTasks() ([]ScheduledTask, error) {
 		return nil
 	}
 
-	oleutil.ForEach(taskFolderList, enumTaskFolders)
+	err = oleutil.ForEach(taskFolderList, enumTaskFolders)
+	if err != nil {
+		return nil, err
+	}
 
 	return scheduledTasks, nil
 }
 
 func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
+	var err error
+
 	name := oleutil.MustGetProperty(task, "Name").ToString()
 	path := oleutil.MustGetProperty(task, "Path").ToString()
 	enabled := oleutil.MustGetProperty(task, "Enabled").Value().(bool)
@@ -102,9 +107,43 @@ func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
 	lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
 	lastTaskResult := int(oleutil.MustGetProperty(task, "LastTaskResult").Val)
 
+	definition := oleutil.MustGetProperty(task, "Definition").ToIDispatch()
+	defer definition.Release()
+	actions := oleutil.MustGetProperty(definition, "Actions").ToIDispatch()
+	defer actions.Release()
+	context := oleutil.MustGetProperty(actions, "Context").ToString()
+
+	var taskActions []interface{}
+	err = oleutil.ForEach(actions, func(v *ole.VARIANT) error {
+		action := v.ToIDispatch()
+		defer action.Release()
+
+		taskAction, err := parseTaskAction(action)
+		if err != nil {
+			return err
+		}
+
+		taskActions = append(taskActions, taskAction)
+
+		return nil
+	})
+	if err != nil {
+		return ScheduledTask{}, err
+	}
+
+	actionCollection := ActionCollection{
+		Context:	context,
+		Actions:	taskActions,
+	}
+
+	taskDef := Definition{
+		Actions:	actionCollection,
+	}
+
 	scheduledTask := ScheduledTask{
 		Name:			name,
 		Path:			path,
+		Definition:		taskDef,
 		Enabled:		enabled,
 		State:			state,
 		MissedRuns:		missedRuns,
@@ -114,4 +153,42 @@ func parseTask(task *ole.IDispatch) (ScheduledTask, error) {
 	}
 
 	return scheduledTask, nil
+}
+
+func parseTaskAction(action *ole.IDispatch) (interface{}, error) {
+	id := oleutil.MustGetProperty(action, "Id").ToString()
+	actionType := int(oleutil.MustGetProperty(action, "Type").Val)
+
+	switch actionType {
+	case TASK_ACTION_EXEC:
+		args := oleutil.MustGetProperty(action, "Arguments").ToString()
+		path := oleutil.MustGetProperty(action, "Path").ToString()
+		workingDir := oleutil.MustGetProperty(action, "WorkingDirectory").ToString()
+
+		execAction := ExecAction{
+			ID:		id,
+			Type:	actionType,
+			Path: 	path,
+			Args: 	args,
+			WorkingDir: workingDir,
+		}
+
+		return execAction, nil
+	case TASK_ACTION_COM_HANDLER:
+		classID := oleutil.MustGetProperty(action, "ClassId").ToString()
+		data := oleutil.MustGetProperty(action, "Data").ToString()
+
+		comHandlerAction := ComHandlerAction{
+			ID:			id,
+			Type:		actionType,
+			ClassID: 	classID,
+			Data:		data,
+		}
+
+		return comHandlerAction, nil
+	default:
+		return nil, errors.New("unsupported IAction type")
+	}
+
+	return nil, nil
 }
