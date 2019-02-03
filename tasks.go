@@ -137,7 +137,7 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	defer actions.Release()
 	context := oleutil.MustGetProperty(actions, "Context").ToString()
 
-	var taskActions []interface{}
+	var taskActions []Action
 	err = oleutil.ForEach(actions, func(v *ole.VARIANT) error {
 		action := v.ToIDispatch()
 		defer action.Release()
@@ -159,14 +159,10 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	defer principal.Release()
 	taskPrincipal := parsePrincipal(principal)
 
-	actionCollection := ActionCollection{
-		Context:	context,
-		Actions:	taskActions,
-	}
-
 	taskDef := Definition{
-		Actions:	actionCollection,
-		Principal: 	taskPrincipal,
+		Actions:		taskActions,
+		Context:		context,
+		Principal: 		taskPrincipal,
 	}
 
 	RegisteredTask := RegisteredTask{
@@ -185,7 +181,7 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	return RegisteredTask, nil
 }
 
-func parseTaskAction(action *ole.IDispatch) (interface{}, error) {
+func parseTaskAction(action *ole.IDispatch) (Action, error) {
 	id := oleutil.MustGetProperty(action, "Id").ToString()
 	actionType := int(oleutil.MustGetProperty(action, "Type").Val)
 
@@ -204,7 +200,7 @@ func parseTaskAction(action *ole.IDispatch) (interface{}, error) {
 		}
 
 		return execAction, nil
-	case TASK_ACTION_COM_HANDLER:
+	case TASK_ACTION_COM_HANDLER, TASK_ACTION_CUSTOM_HANDLER:
 		classID := oleutil.MustGetProperty(action, "ClassId").ToString()
 		data := oleutil.MustGetProperty(action, "Data").ToString()
 

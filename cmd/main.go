@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	//"reflect"
 
 	"github.com/capnspacehook/taskmaster"
 )
@@ -24,21 +23,20 @@ func main() {
 	for _, task := range(tasks) {
 		fmt.Printf("Name: %s\n", task.Name)
 		fmt.Printf("Path: %s\n", task.Path)
-		fmt.Printf("Context: %s\n", task.Definition.Actions.Context)
+		fmt.Printf("Context: %s\n", task.Definition.Context)
 
-		/*for _, action := range(task.Definition.Actions.Actions) {
-			switch reflect.ValueOf(&action).Elem().FieldByName("Type").Int() {
+		for _, action := range(task.Definition.Actions) {
+			switch action.GetType() {
 			case taskmaster.TASK_ACTION_EXEC:
 				execAction := action.(taskmaster.ExecAction)
 				fmt.Printf("Path: %s\n", execAction.Path)
 				fmt.Printf("Args: %s\n", execAction.Args)
-			case taskmaster.TASK_ACTION_COM_HANDLER:
+			case taskmaster.TASK_ACTION_COM_HANDLER, taskmaster.TASK_ACTION_CUSTOM_HANDLER:
 				comHandlerAction := action.(taskmaster.ComHandlerAction)
 				fmt.Printf("ClassID: %s\n", comHandlerAction.ClassID)
 				fmt.Printf("Data: %s\n", comHandlerAction.Data)
 			}
-
-		}*/
+		}
 
 		fmt.Printf("Enabled: %t\n", task.Enabled)
 		fmt.Printf("Number of Missed Runs: %d\n", task.MissedRuns)

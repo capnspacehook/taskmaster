@@ -31,9 +31,10 @@ const (
 
 const (
 	TASK_ACTION_EXEC = 0
-	TASK_ACTION_SEND_EMAIL = 1
-	TASK_ACTION_SHOW_MESSAGE =2
-	TASK_ACTION_COM_HANDLER = 5
+	TASK_ACTION_COM_HANDLER = 1
+	TASK_ACTION_SEND_EMAIL = 2
+	TASK_ACTION_SHOW_MESSAGE = 3
+	TASK_ACTION_CUSTOM_HANDLER = 5
 )
 
 type TaskService struct {
@@ -55,7 +56,8 @@ type RegisteredTask struct {
 }
 
 type Definition struct {
-	Actions				ActionCollection
+	Actions				[]Action
+	Context				string
 	Data				string
 	Principal			Principal
 	RegistrationInfo	RegistrationInfo
@@ -64,9 +66,8 @@ type Definition struct {
 	XMLText				string
 }
 
-type ActionCollection struct {
-	Context		string
-	Actions		[]interface{}
+type Action interface {
+	GetType()	int
 }
 
 type ExecAction struct {
@@ -123,4 +124,20 @@ type TaskSettings struct {
 
 type Trigger struct {
 
+}
+
+func (e ExecAction) GetType() int {
+	return e.Type
+}
+
+func (c ComHandlerAction) GetType() int {
+	return c.Type
+}
+
+func (e EmailAction) GetType() int {
+	return e.Type
+}
+
+func (m MessageAction) GetType() int {
+	return m.Type
 }
