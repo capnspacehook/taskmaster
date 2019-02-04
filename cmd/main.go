@@ -15,12 +15,17 @@ func main() {
 	}
 	defer taskService.Disconnect()
 
-	tasks, err := taskService.GetRegisteredTasks()
+	err = taskService.GetRunningTasks()
 	if err != nil {
 		panic(err)
 	}
 
-	for _, task := range(tasks) {
+	err = taskService.GetRegisteredTasks()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, task := range(taskService.RegisteredTasks) {
 		fmt.Println("----------------------------------------------")
 		fmt.Printf("Name: %s\n", task.Name)
 		fmt.Printf("Path: %s\n", task.Path)
@@ -53,5 +58,13 @@ func main() {
 		fmt.Printf("Next Run Time: %s\n", task.NextRunTime)
 		fmt.Printf("Last Run Time: %s\n", task.LastRunTime)
 		fmt.Printf("Last Task Result %d\n", task.LastTaskResult)
+	}
+
+	for _, task := range(taskService.RunningTasks) {
+		fmt.Printf("CurrentAction: %s\n", task.CurrentAction)
+		fmt.Printf("Name: %s\n", task.Name)
+		fmt.Printf("Path: %s\n", task.Path)
+		fmt.Printf("Engine PID: %d\n", task.EnginePID)
+		fmt.Printf("GUID: %s\n", task.InstanceGUID)
 	}
 }

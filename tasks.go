@@ -68,11 +68,43 @@ func (t *TaskService) Connect() error {
 }
 
 func (t *TaskService) Disconnect() {
+	for _, runningTask := range(t.RunningTasks) {
+		runningTask.taskObj.Release()
+	}
+
+	for _, registeredTask := range(t.RegisteredTasks) {
+		registeredTask.Definition.actionCollectionObj.Release()
+		//registeredTask.Definition.triggerCollectionObj.Release()
+		registeredTask.taskObj.Release()
+	}
+
+	t.taskServiceObj.Release()
 	ole.CoUninitialize()
+	t.isInitialized = false
+}
+
+func (t *TaskService) GetRunningTasks() error {
+	var err error
+
+	runningTasks := oleutil.MustCallMethod(t.taskServiceObj, "GetRunningTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+	defer runningTasks.Release()
+	err = oleutil.ForEach(runningTasks, func(v *ole.VARIANT) error {
+		task := v.ToIDispatch()
+
+		runningTask := parseRunningTask(task)
+		t.RunningTasks = append(t.RunningTasks, runningTask)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetRegisteredTasks returns a list of registered scheduled tasks
-func (t *TaskService) GetRegisteredTasks() ([]RegisteredTask, error) {
+func (t *TaskService) GetRegisteredTasks() error {
 	var err error
 
 	taskFolder := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
@@ -80,8 +112,6 @@ func (t *TaskService) GetRegisteredTasks() ([]RegisteredTask, error) {
 
 	taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
 	defer taskFolderList.Release()
-
-	var registeredTasks []RegisteredTask
 
 	var enumTaskFolders func(*ole.VARIANT) error
 	enumTaskFolders = func (v *ole.VARIANT) error {
@@ -94,11 +124,11 @@ func (t *TaskService) GetRegisteredTasks() ([]RegisteredTask, error) {
 		oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
 			task := v.ToIDispatch()
 
-			registeredTask, err := parseTask(task)
+			registeredTask, err := parseRegisteredTask(task)
 			if err != nil {
 				return err
 			}
-			registeredTasks = append(registeredTasks, registeredTask)
+			t.RegisteredTasks = append(t.RegisteredTasks, registeredTask)
 
 			return nil
 		})
@@ -113,13 +143,34 @@ func (t *TaskService) GetRegisteredTasks() ([]RegisteredTask, error) {
 
 	err = oleutil.ForEach(taskFolderList, enumTaskFolders)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return registeredTasks, nil
+	return nil
 }
 
-func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
+func parseRunningTask(task *ole.IDispatch) RunningTask {
+	currentAction := oleutil.MustGetProperty(task, "CurrentAction").ToString()
+	enginePID := int(oleutil.MustGetProperty(task, "EnginePid").Val)
+	instanceGUID := oleutil.MustGetProperty(task, "InstanceGuid").ToString()
+	name := oleutil.MustGetProperty(task, "Name").ToString()
+	path := oleutil.MustGetProperty(task, "Path").ToString()
+	state := int(oleutil.MustGetProperty(task, "State").Val)
+
+	runningTask := RunningTask{
+		taskObj:		task,
+		CurrentAction:	currentAction,
+		EnginePID:		enginePID,
+		InstanceGUID:	instanceGUID,
+		Name:			name,
+		Path:			path,
+		State:			state,
+	}
+
+	return runningTask
+}
+
+func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	var err error
 
 	name := oleutil.MustGetProperty(task, "Name").ToString()
@@ -134,7 +185,6 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	definition := oleutil.MustGetProperty(task, "Definition").ToIDispatch()
 	defer definition.Release()
 	actions := oleutil.MustGetProperty(definition, "Actions").ToIDispatch()
-	defer actions.Release()
 	context := oleutil.MustGetProperty(actions, "Context").ToString()
 
 	var taskActions []Action
@@ -168,11 +218,12 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	taskSettings := parseTaskSettings(settings)
 
 	taskDef := Definition{
-		Actions:			taskActions,
-		Context:			context,
-		Principal: 			taskPrincipal,
-		Settings:			taskSettings,
-		RegistrationInfo:	registrationInfo,
+		actionCollectionObj: 	actions,
+		Actions:				taskActions,
+		Context:				context,
+		Principal: 				taskPrincipal,
+		Settings:				taskSettings,
+		RegistrationInfo:		registrationInfo,
 	}
 
 	RegisteredTask := RegisteredTask{

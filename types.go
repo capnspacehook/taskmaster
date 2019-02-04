@@ -40,6 +40,20 @@ const (
 type TaskService struct {
 	taskServiceObj 	*ole.IDispatch
 	isInitialized	bool
+
+	RunningTasks	[]RunningTask
+	RegisteredTasks []RegisteredTask
+
+}
+
+type RunningTask struct {
+	taskObj 		*ole.IDispatch
+	CurrentAction	string
+	EnginePID		int
+	InstanceGUID	string
+	Name			string
+	Path			string
+	State			int
 }
 
 type RegisteredTask struct {
@@ -73,7 +87,6 @@ type Action interface {
 }
 
 type ExecAction struct {
-	actionObj	*ole.IDispatch
 	ID			string
 	Type 		int
 	Path		string
@@ -82,7 +95,6 @@ type ExecAction struct {
 }
 
 type ComHandlerAction struct {
-	actionObj	*ole.IDispatch
 	ID 			string
 	Type 		int
 	ClassID 	string
@@ -90,7 +102,6 @@ type ComHandlerAction struct {
 }
 
 type EmailAction struct {
-	actionObj	*ole.IDispatch
 	ID			string
 	Type 		int
 	Body		string
@@ -104,7 +115,6 @@ type EmailAction struct {
 }
 
 type MessageAction struct {
-	actionObj	*ole.IDispatch
 	ID			string
 	Type 		int
 	Title 		string
