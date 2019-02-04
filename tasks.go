@@ -159,10 +159,20 @@ func parseTask(task *ole.IDispatch) (RegisteredTask, error) {
 	defer principal.Release()
 	taskPrincipal := parsePrincipal(principal)
 
+	regInfo := oleutil.MustGetProperty(definition, "RegistrationInfo").ToIDispatch()
+	defer regInfo.Release()
+	registrationInfo := parseRegistrationInfo(regInfo)
+
+	settings := oleutil.MustGetProperty(definition, "Settings").ToIDispatch()
+	defer settings.Release()
+	taskSettings := parseTaskSettings(settings)
+
 	taskDef := Definition{
-		Actions:		taskActions,
-		Context:		context,
-		Principal: 		taskPrincipal,
+		Actions:			taskActions,
+		Context:			context,
+		Principal: 			taskPrincipal,
+		Settings:			taskSettings,
+		RegistrationInfo:	registrationInfo,
 	}
 
 	RegisteredTask := RegisteredTask{
@@ -235,4 +245,98 @@ func parsePrincipal(taskDef *ole.IDispatch) Principal {
 	}
 
 	return principle
+}
+
+func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
+	author := oleutil.MustGetProperty(regInfo, "Author").ToString()
+	date := oleutil.MustGetProperty(regInfo, "Date").ToString()
+	description := oleutil.MustGetProperty(regInfo, "Description").ToString()
+	documentation := oleutil.MustGetProperty(regInfo, "Documentation").ToString()
+	securityDescriptor := oleutil.MustGetProperty(regInfo, "SecurityDescriptor").ToString()
+	source := oleutil.MustGetProperty(regInfo, "Source").ToString()
+	uri := oleutil.MustGetProperty(regInfo, "URI").ToString()
+	version := oleutil.MustGetProperty(regInfo, "Version").ToString()
+
+	registrationInfo := RegistrationInfo{
+		Author:				author,
+		Date:				date,
+		Description:		description,
+		Documentation:		documentation,
+		SecurityDescriptor:	securityDescriptor,
+		Source:				source,
+		URI:				uri,
+		Version:			version,
+	}
+
+	return registrationInfo
+}
+
+func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
+	allowDemandStart := oleutil.MustGetProperty(settings, "AllowDemandStart").Value().(bool)
+	allowHardTerminate  := oleutil.MustGetProperty(settings, "AllowHardTerminate").Value().(bool)
+	compatibility := int(oleutil.MustGetProperty(settings, "Compatibility").Val)
+	deleteExpiredTaskAfter := oleutil.MustGetProperty(settings, "DeleteExpiredTaskAfter").ToString()
+	dontStartOnBatteries := oleutil.MustGetProperty(settings, "DisallowStartIfOnBatteries").Value().(bool)
+	enabled := oleutil.MustGetProperty(settings, "Enabled").Value().(bool)
+	timeLimit := oleutil.MustGetProperty(settings, "ExecutionTimeLimit").ToString()
+	hidden := oleutil.MustGetProperty(settings, "Hidden").Value().(bool)
+
+	idleSettings := oleutil.MustGetProperty(settings, "IdleSettings").ToIDispatch()
+	defer idleSettings.Release()
+	idleDuration := oleutil.MustGetProperty(idleSettings, "IdleDuration").ToString()
+	restartOnIdle := oleutil.MustGetProperty(idleSettings, "RestartOnIdle").Value().(bool)
+	stopOnIdleEnd := oleutil.MustGetProperty(idleSettings, "StopOnIdleEnd").Value().(bool)
+	waitTimeOut := oleutil.MustGetProperty(idleSettings, "WaitTimeout").ToString()
+
+	multipleInstances := int(oleutil.MustGetProperty(settings, "MultipleInstances").Val)
+
+	networkSettings := oleutil.MustGetProperty(settings, "NetworkSettings").ToIDispatch()
+	defer networkSettings.Release()
+	id := oleutil.MustGetProperty(networkSettings, "Id").ToString()
+	name := oleutil.MustGetProperty(networkSettings, "Name").ToString()
+
+	priority := int(oleutil.MustGetProperty(settings, "Priority").Val)
+	restartCount := int(oleutil.MustGetProperty(settings, "RestartCount").Val)
+	restartInterval := oleutil.MustGetProperty(settings, "RestartInterval").ToString()
+	runOnlyIfIdle := oleutil.MustGetProperty(settings, "RunOnlyIfIdle").Value().(bool)
+	runOnlyIfNetworkAvalible := oleutil.MustGetProperty(settings, "RunOnlyIfNetworkAvailable").Value().(bool)
+	startWhenAvalible := oleutil.MustGetProperty(settings, "StartWhenAvailable").Value().(bool)
+	stopIfGoingOnBatteries := oleutil.MustGetProperty(settings, "StopIfGoingOnBatteries").Value().(bool)
+	wakeToRun := oleutil.MustGetProperty(settings, "WakeToRun").Value().(bool)
+
+	idleTaskSettings := IdleSettings{
+		IdleDuration:		idleDuration,
+		RestartOnIdle:		restartOnIdle,
+		StopOnIdleEnd:		stopOnIdleEnd,
+		WaitTimeout:		waitTimeOut,
+	}
+
+	networkTaskSettings := NetworkSettings{
+		ID: 	id,
+		Name:	name,
+	}
+
+	taskSettings := TaskSettings{
+		AllowDemandStart:			allowDemandStart,
+		AllowHardTerminate:			allowHardTerminate,
+		Compatibility:				compatibility,
+		DeleteExpiredTaskAfter:		deleteExpiredTaskAfter,
+		DontStartOnBatteries:		dontStartOnBatteries,
+		Enabled:					enabled,
+		TimeLimit:					timeLimit,
+		Hidden:						hidden,
+		IdleSettings:				idleTaskSettings,
+		MultipleInstances:			multipleInstances,
+		NetworkSettings:			networkTaskSettings,
+		Priority:					priority,
+		RestartCount:				restartCount,
+		RestartInterval:			restartInterval,
+		RunOnlyIfIdle:				runOnlyIfIdle,
+		RunOnlyIfNetworkAvalible:	runOnlyIfNetworkAvalible,
+		StartWhenAvalible:			startWhenAvalible,
+		StopIfGoingOnBatteries:		stopIfGoingOnBatteries,
+		WakeToRun:					wakeToRun,
+	}
+
+	return taskSettings
 }

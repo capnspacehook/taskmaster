@@ -21,20 +21,30 @@ func main() {
 	}
 
 	for _, task := range(tasks) {
+		fmt.Println("----------------------------------------------")
 		fmt.Printf("Name: %s\n", task.Name)
 		fmt.Printf("Path: %s\n", task.Path)
 		fmt.Printf("Context: %s\n", task.Definition.Context)
 
-		for _, action := range(task.Definition.Actions) {
+		fmt.Println("Principle:")
+		fmt.Printf("\tName: %s\n", task.Definition.Principal.Name)
+		fmt.Printf("\tGroupID: %s\n", task.Definition.Principal.GroupID)
+		fmt.Printf("\tID: %s\n", task.Definition.Principal.ID)
+		fmt.Printf("\tLogon Type: %d\n", task.Definition.Principal.LogonType)
+		fmt.Printf("\tRunLevel: %d\n", task.Definition.Principal.RunLevel)
+		fmt.Printf("\tUserID: %s\n", task.Definition.Principal.UserID)
+
+		for i, action := range(task.Definition.Actions) {
+			fmt.Printf("Action %d:\n", i + 1)
 			switch action.GetType() {
 			case taskmaster.TASK_ACTION_EXEC:
 				execAction := action.(taskmaster.ExecAction)
-				fmt.Printf("Path: %s\n", execAction.Path)
-				fmt.Printf("Args: %s\n", execAction.Args)
+				fmt.Printf("\tPath: %s\n", execAction.Path)
+				fmt.Printf("\tArgs: %s\n", execAction.Args)
 			case taskmaster.TASK_ACTION_COM_HANDLER, taskmaster.TASK_ACTION_CUSTOM_HANDLER:
 				comHandlerAction := action.(taskmaster.ComHandlerAction)
-				fmt.Printf("ClassID: %s\n", comHandlerAction.ClassID)
-				fmt.Printf("Data: %s\n", comHandlerAction.Data)
+				fmt.Printf("\tClassID: %s\n", comHandlerAction.ClassID)
+				fmt.Printf("\tData: %s\n", comHandlerAction.Data)
 			}
 		}
 

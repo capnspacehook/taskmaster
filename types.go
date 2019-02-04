@@ -56,14 +56,16 @@ type RegisteredTask struct {
 }
 
 type Definition struct {
-	Actions				[]Action
-	Context				string
-	Data				string
-	Principal			Principal
-	RegistrationInfo	RegistrationInfo
-	Settings			TaskSettings
-	Triggers			[]Trigger
-	XMLText				string
+	actionCollectionObj		*ole.IDispatch
+	triggerCollectionObj 	*ole.IDispatch
+	Actions					[]Action
+	Context					string
+	Data					string
+	Principal				Principal
+	RegistrationInfo		RegistrationInfo
+	Settings				TaskSettings
+	Triggers				[]Trigger
+	XMLText					string
 }
 
 type Action interface {
@@ -71,6 +73,7 @@ type Action interface {
 }
 
 type ExecAction struct {
+	actionObj	*ole.IDispatch
 	ID			string
 	Type 		int
 	Path		string
@@ -79,30 +82,33 @@ type ExecAction struct {
 }
 
 type ComHandlerAction struct {
-	ID 		string
-	Type 	int
-	ClassID string
-	Data	string
+	actionObj	*ole.IDispatch
+	ID 			string
+	Type 		int
+	ClassID 	string
+	Data		string
 }
 
 type EmailAction struct {
-	ID		string
-	Type 	int
-	Body	string
-	Server	string
-	Subject	string
-	To 		string
-	Cc		string
-	Bcc		string
-	ReplyTo	string
-	From 	string
+	actionObj	*ole.IDispatch
+	ID			string
+	Type 		int
+	Body		string
+	Server		string
+	Subject		string
+	To 			string
+	Cc			string
+	Bcc			string
+	ReplyTo		string
+	From 		string
 }
 
 type MessageAction struct {
-	ID		string
-	Type 	int
-	Title 	string
-	Message string
+	actionObj	*ole.IDispatch
+	ID			string
+	Type 		int
+	Title 		string
+	Message 	string
 }
 
 type Principal struct {
@@ -115,11 +121,48 @@ type Principal struct {
 }
 
 type RegistrationInfo struct {
-
+	Author 				string
+	Date 				string
+	Description			string
+	Documentation 		string
+	SecurityDescriptor 	string
+	Source				string
+	URI 				string
+	Version				string
 }
 
 type TaskSettings struct {
+	AllowDemandStart			bool
+	AllowHardTerminate			bool
+	Compatibility				int
+	DeleteExpiredTaskAfter		string
+	DontStartOnBatteries		bool
+	Enabled						bool
+	TimeLimit					string
+	Hidden						bool
+	IdleSettings				IdleSettings
+	MultipleInstances			int
+	NetworkSettings				NetworkSettings
+	Priority					int
+	RestartCount				int
+	RestartInterval				string
+	RunOnlyIfIdle				bool
+	RunOnlyIfNetworkAvalible	bool
+	StartWhenAvalible			bool
+	StopIfGoingOnBatteries		bool
+	WakeToRun					bool
+}
 
+type IdleSettings struct {
+	IdleDuration		string
+	RestartOnIdle		bool
+	StopOnIdleEnd		bool
+	WaitTimeout			string
+}
+
+type NetworkSettings struct {
+	ID 		string
+	Name	string
 }
 
 type Trigger struct {
