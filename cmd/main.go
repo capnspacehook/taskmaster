@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer taskService.Disconnect()
+	defer taskService.Cleanup()
 
 	err = taskService.GetRunningTasks()
 	if err != nil {
@@ -25,6 +25,7 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("REGISTERED TASKS:")
 	for _, task := range(taskService.RegisteredTasks) {
 		fmt.Println("----------------------------------------------")
 		fmt.Printf("Name: %s\n", task.Name)
@@ -60,7 +61,9 @@ func main() {
 		fmt.Printf("Last Task Result %d\n", task.LastTaskResult)
 	}
 
+	fmt.Println("\nRUNNING TASKS:")
 	for _, task := range(taskService.RunningTasks) {
+		fmt.Println("----------------------------------------------")
 		fmt.Printf("CurrentAction: %s\n", task.CurrentAction)
 		fmt.Printf("Name: %s\n", task.Name)
 		fmt.Printf("Path: %s\n", task.Path)
