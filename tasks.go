@@ -40,6 +40,8 @@ func (t *TaskService) initialize() error {
 	return nil
 }
 
+// Connect connects to the local Task Scheduler service. This function
+// has to be run before any other functions in taskmaster can be used
 func (t *TaskService) Connect() error {
 	if !t.isInitialized {
 		err := t.initialize()
@@ -69,6 +71,9 @@ func (t *TaskService) Connect() error {
 	return nil
 }
 
+// Cleanup frees all the Task Scheduler COM objects that have been created.
+// If this function is not called before the parent program terminates,
+// memory leaks will occur
 func (t *TaskService) Cleanup() {
 	for _, runningTask := range(t.RunningTasks) {
 		runningTask.taskObj.Release()
@@ -102,6 +107,7 @@ func (t *TaskService) Cleanup() {
 	t.isConnected = false
 }
 
+// GetRunningTasks enumerates the Task Scheduler database for all currently running tasks
 func (t *TaskService) GetRunningTasks() error {
 	var err error
 
@@ -122,7 +128,7 @@ func (t *TaskService) GetRunningTasks() error {
 	return nil
 }
 
-// GetRegisteredTasks returns a list of registered scheduled tasks
+// GetRegisteredTasks enumerates the Task Scheduler database for all currently registered tasks
 func (t *TaskService) GetRegisteredTasks() error {
 	var err error
 
@@ -298,6 +304,9 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 
 		return nil
 	})
+	if err != nil {
+		return RegisteredTask{}, err
+	}
 
 	taskDef := Definition{
 		actionCollectionObj: 	actions,
