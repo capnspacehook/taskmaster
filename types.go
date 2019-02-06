@@ -84,9 +84,17 @@ type TaskService struct {
 	isInitialized	bool
 	isConnected		bool
 
-	RunningTasks	[]RunningTask
-	RegisteredTasks []RegisteredTask
+	RootFolder 		TaskFolder
+	RunningTasks	[]*RunningTask
+	RegisteredTasks []*RegisteredTask
+}
 
+type TaskFolder struct {
+	folderObj			*ole.IDispatch
+	Name				string
+	Path				string
+	SubFolders			[]*TaskFolder
+	RegisteredTasks 	[]*RegisteredTask
 }
 
 type RunningTask struct {

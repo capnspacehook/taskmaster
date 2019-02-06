@@ -2,9 +2,22 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/capnspacehook/taskmaster"
 )
+
+func printTasks(taskFolder taskmaster.TaskFolder, depth int) {
+	padding := strings.Repeat("\t", depth)
+	fmt.Println(padding + taskFolder.Path)
+	for _, task := range(taskFolder.RegisteredTasks) {
+		fmt.Println(padding + "\t" + task.Name)
+	}
+
+	for _, folder := range(taskFolder.SubFolders) {
+		printTasks(*folder, depth + 1)
+	}
+}
 
 func main() {
 	var err error
@@ -15,59 +28,10 @@ func main() {
 	}
 	defer taskService.Cleanup()
 
-	err = taskService.GetRunningTasks()
-	if err != nil {
-		panic(err)
-	}
-
 	err = taskService.GetRegisteredTasks()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("REGISTERED TASKS:")
-	for _, task := range(taskService.RegisteredTasks) {
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("Name: %s\n", task.Name)
-		fmt.Printf("Path: %s\n", task.Path)
-		fmt.Printf("Context: %s\n", task.Definition.Context)
-
-		fmt.Println("Principle:")
-		fmt.Printf("\tName: %s\n", task.Definition.Principal.Name)
-		fmt.Printf("\tGroupID: %s\n", task.Definition.Principal.GroupID)
-		fmt.Printf("\tID: %s\n", task.Definition.Principal.ID)
-		fmt.Printf("\tLogon Type: %d\n", task.Definition.Principal.LogonType)
-		fmt.Printf("\tRunLevel: %d\n", task.Definition.Principal.RunLevel)
-		fmt.Printf("\tUserID: %s\n", task.Definition.Principal.UserID)
-
-		for i, action := range(task.Definition.Actions) {
-			fmt.Printf("Action %d:\n", i + 1)
-			switch action.GetType() {
-			case taskmaster.TASK_ACTION_EXEC:
-				execAction := action.(taskmaster.ExecAction)
-				fmt.Printf("\tPath: %s\n", execAction.Path)
-				fmt.Printf("\tArgs: %s\n", execAction.Args)
-			case taskmaster.TASK_ACTION_COM_HANDLER, taskmaster.TASK_ACTION_CUSTOM_HANDLER:
-				comHandlerAction := action.(taskmaster.ComHandlerAction)
-				fmt.Printf("\tClassID: %s\n", comHandlerAction.ClassID)
-				fmt.Printf("\tData: %s\n", comHandlerAction.Data)
-			}
-		}
-
-		fmt.Printf("Enabled: %t\n", task.Enabled)
-		fmt.Printf("Number of Missed Runs: %d\n", task.MissedRuns)
-		fmt.Printf("Next Run Time: %s\n", task.NextRunTime)
-		fmt.Printf("Last Run Time: %s\n", task.LastRunTime)
-		fmt.Printf("Last Task Result %d\n", task.LastTaskResult)
-	}
-
-	fmt.Println("\nRUNNING TASKS:")
-	for _, task := range(taskService.RunningTasks) {
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("CurrentAction: %s\n", task.CurrentAction)
-		fmt.Printf("Name: %s\n", task.Name)
-		fmt.Printf("Path: %s\n", task.Path)
-		fmt.Printf("Engine PID: %d\n", task.EnginePID)
-		fmt.Printf("GUID: %s\n", task.InstanceGUID)
-	}
+	printTasks(taskService.RootFolder, 0)
 }

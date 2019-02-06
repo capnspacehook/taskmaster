@@ -74,6 +74,15 @@ func (t *TaskService) Cleanup() {
 		runningTask.taskObj.Release()
 	}
 
+	var releaseFolderObjs func(*TaskFolder)
+	releaseFolderObjs = func(taskFolder *TaskFolder) {
+		taskFolder.folderObj.Release()
+		for _, subFolder := range(taskFolder.SubFolders) {
+			releaseFolderObjs(subFolder)
+		}
+	}
+	releaseFolderObjs(&t.RootFolder)
+
 	for _, registeredTask := range(t.RegisteredTasks) {
 		registeredTask.Definition.actionCollectionObj.Release()
 		registeredTask.Definition.triggerCollectionObj.Release()
@@ -102,7 +111,7 @@ func (t *TaskService) GetRunningTasks() error {
 		task := v.ToIDispatch()
 
 		runningTask := parseRunningTask(task)
-		t.RunningTasks = append(t.RunningTasks, runningTask)
+		t.RunningTasks = append(t.RunningTasks, &runningTask)
 
 		return nil
 	})
@@ -117,44 +126,91 @@ func (t *TaskService) GetRunningTasks() error {
 func (t *TaskService) GetRegisteredTasks() error {
 	var err error
 
-	taskFolder := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
-	defer taskFolder.Release()
-
-	taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
-	defer taskFolderList.Release()
-
-	var enumTaskFolders func(*ole.VARIANT) error
-	enumTaskFolders = func (v *ole.VARIANT) error {
-		taskFolder := v.ToIDispatch()
-		defer taskFolder.Release()
-
-		taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
-		defer taskCollection.Release()
-
-		oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
-			task := v.ToIDispatch()
-
-			registeredTask, err := parseRegisteredTask(task)
-			if err != nil {
-				return err
-			}
-			t.RegisteredTasks = append(t.RegisteredTasks, registeredTask)
-
-			return nil
-		})
-
-		taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
-		defer taskFolderList.Release()
-
-		oleutil.ForEach(taskFolderList, enumTaskFolders)
-
-		return nil
+	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
+	rootFolder := TaskFolder{
+		folderObj:	rootFolderObj,
+		Name: 		"\\",
+		Path:		"\\",
 	}
 
-	err = oleutil.ForEach(taskFolderList, enumTaskFolders)
+	// get tasks from root folder
+	rootTaskCollection := oleutil.MustCallMethod(rootFolderObj, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+	defer rootTaskCollection.Release()
+	err = oleutil.ForEach(rootTaskCollection, func(v *ole.VARIANT) error {
+		task := v.ToIDispatch()
+
+		registeredTask, err := parseRegisteredTask(task)
+		if err != nil {
+			return err
+		}
+		t.RegisteredTasks = append(t.RegisteredTasks, &registeredTask)
+		rootFolder.RegisteredTasks = append(rootFolder.RegisteredTasks, &registeredTask)
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
+
+	taskFolderList := oleutil.MustCallMethod(rootFolderObj, "GetFolders", 0).ToIDispatch()
+	defer taskFolderList.Release()
+
+	// recursively enumerate folders and tasks
+	var initEnumTaskFolders func(*TaskFolder) func(*ole.VARIANT) error
+	initEnumTaskFolders = func(parentFolder *TaskFolder) func(*ole.VARIANT) error {
+		var enumTaskFolders func(*ole.VARIANT) error
+		enumTaskFolders = func (v *ole.VARIANT) error {
+			taskFolder := v.ToIDispatch()
+
+			name := oleutil.MustGetProperty(taskFolder, "Name").ToString()
+			path := oleutil.MustGetProperty(taskFolder, "Path").ToString()
+			taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+			defer taskCollection.Release()
+
+			taskSubFolder := &TaskFolder{
+				folderObj:	taskFolder,
+				Name:		name,
+				Path:		path,
+			}
+
+			var err error
+			err = oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
+				task := v.ToIDispatch()
+
+				registeredTask, err := parseRegisteredTask(task)
+				if err != nil {
+					return err
+				}
+				t.RegisteredTasks = append(t.RegisteredTasks, &registeredTask)
+				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, &registeredTask)
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			parentFolder.SubFolders = append(parentFolder.SubFolders, taskSubFolder)
+
+			taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
+			defer taskFolderList.Release()
+
+			err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(taskSubFolder))
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		return enumTaskFolders
+	}
+
+	err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(&rootFolder))
+	if err != nil {
+		return err
+	}
+	t.RootFolder = rootFolder
 
 	return nil
 }
@@ -599,4 +655,15 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	default:
 		return nil, errors.New("unsupported ITrigger type")
 	}
+}
+
+func (r *RunningTask) Stop() error {
+	stopResult := oleutil.MustCallMethod(r.taskObj, "Stop").Val
+	if stopResult != 0 {
+		return errors.New("cannot stop running task; access is denied")
+	}
+
+	r.taskObj.Release()
+
+	return nil
 }
