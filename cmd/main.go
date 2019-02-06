@@ -10,12 +10,12 @@ import (
 func printTasks(taskFolder taskmaster.TaskFolder, depth int) {
 	padding := strings.Repeat("\t", depth)
 	fmt.Println(padding + taskFolder.Path)
-	for _, task := range(taskFolder.RegisteredTasks) {
+	for _, task := range taskFolder.RegisteredTasks {
 		fmt.Println(padding + "\t" + task.Name)
 	}
 
-	for _, folder := range(taskFolder.SubFolders) {
-		printTasks(*folder, depth + 1)
+	for _, folder := range taskFolder.SubFolders {
+		printTasks(*folder, depth+1)
 	}
 }
 

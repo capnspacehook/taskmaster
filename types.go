@@ -26,14 +26,14 @@ const (
 
 const (
 	TASK_RUNLEVEL_LUA = iota
-  	TASK_RUNLEVEL_HIGHEST
+	TASK_RUNLEVEL_HIGHEST
 )
 
 const (
-	TASK_ACTION_EXEC = 0
-	TASK_ACTION_COM_HANDLER = 1
-	TASK_ACTION_SEND_EMAIL = 2
-	TASK_ACTION_SHOW_MESSAGE = 3
+	TASK_ACTION_EXEC           = 0
+	TASK_ACTION_COM_HANDLER    = 1
+	TASK_ACTION_SEND_EMAIL     = 2
+	TASK_ACTION_SHOW_MESSAGE   = 3
 	TASK_ACTION_CUSTOM_HANDLER = 5
 )
 
@@ -80,194 +80,194 @@ const (
 )
 
 type TaskService struct {
-	taskServiceObj 	*ole.IDispatch
-	isInitialized	bool
-	isConnected		bool
+	taskServiceObj *ole.IDispatch
+	isInitialized  bool
+	isConnected    bool
 
-	RootFolder 		TaskFolder
-	RunningTasks	[]*RunningTask
+	RootFolder      TaskFolder
+	RunningTasks    []*RunningTask
 	RegisteredTasks []*RegisteredTask
 }
 
 type TaskFolder struct {
-	folderObj			*ole.IDispatch
-	Name				string
-	Path				string
-	SubFolders			[]*TaskFolder
-	RegisteredTasks 	[]*RegisteredTask
+	folderObj       *ole.IDispatch
+	Name            string
+	Path            string
+	SubFolders      []*TaskFolder
+	RegisteredTasks []*RegisteredTask
 }
 
 type RunningTask struct {
-	taskObj 		*ole.IDispatch
-	CurrentAction	string
-	EnginePID		int
-	InstanceGUID	string
-	Name			string
-	Path			string
-	State			int
+	taskObj       *ole.IDispatch
+	CurrentAction string
+	EnginePID     int
+	InstanceGUID  string
+	Name          string
+	Path          string
+	State         int
 }
 
 type RegisteredTask struct {
-	taskObj			*ole.IDispatch
-	Name			string
-	Path			string
-	Definition 		Definition
-	Enabled			bool
-	State			int
-	MissedRuns		int
-	NextRunTime		time.Time
-	LastRunTime		time.Time
-	LastTaskResult	int
+	taskObj        *ole.IDispatch
+	Name           string
+	Path           string
+	Definition     Definition
+	Enabled        bool
+	State          int
+	MissedRuns     int
+	NextRunTime    time.Time
+	LastRunTime    time.Time
+	LastTaskResult int
 }
 
 type Definition struct {
-	actionCollectionObj		*ole.IDispatch
-	triggerCollectionObj 	*ole.IDispatch
-	Actions					[]Action
-	Context					string
-	Data					string
-	Principal				Principal
-	RegistrationInfo		RegistrationInfo
-	Settings				TaskSettings
-	Triggers				[]Trigger
-	XMLText					string
+	actionCollectionObj  *ole.IDispatch
+	triggerCollectionObj *ole.IDispatch
+	Actions              []Action
+	Context              string
+	Data                 string
+	Principal            Principal
+	RegistrationInfo     RegistrationInfo
+	Settings             TaskSettings
+	Triggers             []Trigger
+	XMLText              string
 }
 
 type Action interface {
-	GetType() 	int
+	GetType() int
 }
 
 type TaskAction struct {
-	ID 			string
-	Type		int
+	ID   string
+	Type int
 }
 
 type ExecAction struct {
 	TaskAction
-	Path		string
-	Args 		string
-	WorkingDir 	string
+	Path       string
+	Args       string
+	WorkingDir string
 }
 
 type ComHandlerAction struct {
 	TaskAction
-	ClassID 	string
-	Data		string
+	ClassID string
+	Data    string
 }
 
 type EmailAction struct {
 	TaskAction
-	Body		string
-	Server		string
-	Subject		string
-	To 			string
-	Cc			string
-	Bcc			string
-	ReplyTo		string
-	From 		string
+	Body    string
+	Server  string
+	Subject string
+	To      string
+	Cc      string
+	Bcc     string
+	ReplyTo string
+	From    string
 }
 
 type MessageAction struct {
 	TaskAction
-	Title 		string
-	Message 	string
+	Title   string
+	Message string
 }
 
 type Principal struct {
-	Name		string
-	GroupID		string
-	ID			string
-	LogonType	int
-	RunLevel	int
-	UserID		string
+	Name      string
+	GroupID   string
+	ID        string
+	LogonType int
+	RunLevel  int
+	UserID    string
 }
 
 type RegistrationInfo struct {
-	Author 				string
-	Date 				string
-	Description			string
-	Documentation 		string
-	SecurityDescriptor 	string
-	Source				string
-	URI 				string
-	Version				string
+	Author             string
+	Date               string
+	Description        string
+	Documentation      string
+	SecurityDescriptor string
+	Source             string
+	URI                string
+	Version            string
 }
 
 type TaskSettings struct {
-	AllowDemandStart			bool
-	AllowHardTerminate			bool
-	Compatibility				int
-	DeleteExpiredTaskAfter		string
-	DontStartOnBatteries		bool
-	Enabled						bool
-	TimeLimit					string
-	Hidden						bool
-	IdleSettings				IdleSettings
-	MultipleInstances			int
-	NetworkSettings				NetworkSettings
-	Priority					int
-	RestartCount				int
-	RestartInterval				string
-	RunOnlyIfIdle				bool
-	RunOnlyIfNetworkAvalible	bool
-	StartWhenAvalible			bool
-	StopIfGoingOnBatteries		bool
-	WakeToRun					bool
+	AllowDemandStart         bool
+	AllowHardTerminate       bool
+	Compatibility            int
+	DeleteExpiredTaskAfter   string
+	DontStartOnBatteries     bool
+	Enabled                  bool
+	TimeLimit                string
+	Hidden                   bool
+	IdleSettings             IdleSettings
+	MultipleInstances        int
+	NetworkSettings          NetworkSettings
+	Priority                 int
+	RestartCount             int
+	RestartInterval          string
+	RunOnlyIfIdle            bool
+	RunOnlyIfNetworkAvalible bool
+	StartWhenAvalible        bool
+	StopIfGoingOnBatteries   bool
+	WakeToRun                bool
 }
 
 type IdleSettings struct {
-	IdleDuration		string
-	RestartOnIdle		bool
-	StopOnIdleEnd		bool
-	WaitTimeout			string
+	IdleDuration  string
+	RestartOnIdle bool
+	StopOnIdleEnd bool
+	WaitTimeout   string
 }
 
 type NetworkSettings struct {
-	ID 		string
-	Name	string
+	ID   string
+	Name string
 }
 
 type Trigger interface {
-	GetType()	int
+	GetType() int
 }
 
 type TaskTrigger struct {
-	Enabled				bool
-	EndBoundary			string
-	ExecutionTimeLimit 	string
-	ID 					string
-	Repetition			RepetitionPattern
-	StartBoundary		string
-	Type				int
+	Enabled            bool
+	EndBoundary        string
+	ExecutionTimeLimit string
+	ID                 string
+	Repetition         RepetitionPattern
+	StartBoundary      string
+	Type               int
 }
 
 type RepetitionPattern struct {
-	Duration 			string
-	Interval 			string
-	StopAtDurationEnd	bool
+	Duration          string
+	Interval          string
+	StopAtDurationEnd bool
 }
 
 type BootTrigger struct {
 	TaskTrigger
-	Delay 			string
+	Delay string
 }
 
 type DailyTrigger struct {
 	TaskTrigger
-	DaysInterval	int
-	RandomDelay		string
+	DaysInterval int
+	RandomDelay  string
 }
 
 type EventTrigger struct {
 	TaskTrigger
-	Delay 			string
-	Subscription	string
-	ValueQueries	ValueQueries
+	Delay        string
+	Subscription string
+	ValueQueries ValueQueries
 }
 
 type ValueQueries struct {
-	valueQueriesObj		*ole.IDispatch
-	ValueQueries		map[string]string
+	valueQueriesObj *ole.IDispatch
+	ValueQueries    map[string]string
 }
 
 type IdleTrigger struct {
@@ -276,42 +276,42 @@ type IdleTrigger struct {
 
 type LogonTrigger struct {
 	TaskTrigger
-	Delay 			string
-	UserID			string
+	Delay  string
+	UserID string
 }
 
 type MonthlyDOWTrigger struct {
 	TaskTrigger
-	DaysOfWeek				int
-	MonthsOfYear			int
-	RandomDelay				string
-	RunOnLastWeekOnMonth	bool
-	WeeksOfMonth			int
+	DaysOfWeek           int
+	MonthsOfYear         int
+	RandomDelay          string
+	RunOnLastWeekOnMonth bool
+	WeeksOfMonth         int
 }
 
 type MonthlyTrigger struct {
 	TaskTrigger
-	DaysOfMonth				int
-	MonthsOfYear			int
-	RandomDelay				string
-	RunOnLastWeekOnMonth	bool
+	DaysOfMonth          int
+	MonthsOfYear         int
+	RandomDelay          string
+	RunOnLastWeekOnMonth bool
 }
 
 type RegistrationTrigger struct {
 	TaskTrigger
-	Delay 			string
+	Delay string
 }
 
 type TimeTrigger struct {
 	TaskTrigger
-	RandomDelay		string
+	RandomDelay string
 }
 
 type WeeklyTrigger struct {
 	TaskTrigger
-	DaysOfWeek		int
-	RandomDelay		string
-	WeeksInterval	int
+	DaysOfWeek    int
+	RandomDelay   string
+	WeeksInterval int
 }
 
 type SessionStateChangeTrigger struct {

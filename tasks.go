@@ -75,24 +75,24 @@ func (t *TaskService) Connect() error {
 // If this function is not called before the parent program terminates,
 // memory leaks will occur
 func (t *TaskService) Cleanup() {
-	for _, runningTask := range(t.RunningTasks) {
+	for _, runningTask := range t.RunningTasks {
 		runningTask.taskObj.Release()
 	}
 
 	var releaseFolderObjs func(*TaskFolder)
 	releaseFolderObjs = func(taskFolder *TaskFolder) {
 		taskFolder.folderObj.Release()
-		for _, subFolder := range(taskFolder.SubFolders) {
+		for _, subFolder := range taskFolder.SubFolders {
 			releaseFolderObjs(subFolder)
 		}
 	}
 	releaseFolderObjs(&t.RootFolder)
 
-	for _, registeredTask := range(t.RegisteredTasks) {
+	for _, registeredTask := range t.RegisteredTasks {
 		registeredTask.Definition.actionCollectionObj.Release()
 		registeredTask.Definition.triggerCollectionObj.Release()
 
-		for _, trigger := range(registeredTask.Definition.Triggers) {
+		for _, trigger := range registeredTask.Definition.Triggers {
 			if trigger.GetType() == TASK_TRIGGER_EVENT {
 				trigger.(EventTrigger).ValueQueries.valueQueriesObj.Release()
 			}
@@ -134,9 +134,9 @@ func (t *TaskService) GetRegisteredTasks() error {
 
 	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
 	rootFolder := TaskFolder{
-		folderObj:	rootFolderObj,
-		Name: 		"\\",
-		Path:		"\\",
+		folderObj: rootFolderObj,
+		Name:      "\\",
+		Path:      "\\",
 	}
 
 	// get tasks from root folder
@@ -165,7 +165,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 	var initEnumTaskFolders func(*TaskFolder) func(*ole.VARIANT) error
 	initEnumTaskFolders = func(parentFolder *TaskFolder) func(*ole.VARIANT) error {
 		var enumTaskFolders func(*ole.VARIANT) error
-		enumTaskFolders = func (v *ole.VARIANT) error {
+		enumTaskFolders = func(v *ole.VARIANT) error {
 			taskFolder := v.ToIDispatch()
 
 			name := oleutil.MustGetProperty(taskFolder, "Name").ToString()
@@ -174,9 +174,9 @@ func (t *TaskService) GetRegisteredTasks() error {
 			defer taskCollection.Release()
 
 			taskSubFolder := &TaskFolder{
-				folderObj:	taskFolder,
-				Name:		name,
-				Path:		path,
+				folderObj: taskFolder,
+				Name:      name,
+				Path:      path,
 			}
 
 			var err error
@@ -230,13 +230,13 @@ func parseRunningTask(task *ole.IDispatch) RunningTask {
 	state := int(oleutil.MustGetProperty(task, "State").Val)
 
 	runningTask := RunningTask{
-		taskObj:		task,
-		CurrentAction:	currentAction,
-		EnginePID:		enginePID,
-		InstanceGUID:	instanceGUID,
-		Name:			name,
-		Path:			path,
-		State:			state,
+		taskObj:       task,
+		CurrentAction: currentAction,
+		EnginePID:     enginePID,
+		InstanceGUID:  instanceGUID,
+		Name:          name,
+		Path:          path,
+		State:         state,
 	}
 
 	return runningTask
@@ -309,27 +309,27 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	}
 
 	taskDef := Definition{
-		actionCollectionObj: 	actions,
-		triggerCollectionObj:	triggers,
-		Actions:				taskActions,
-		Context:				context,
-		Principal: 				taskPrincipal,
-		Settings:				taskSettings,
-		RegistrationInfo:		registrationInfo,
-		Triggers:				taskTriggers,
+		actionCollectionObj:  actions,
+		triggerCollectionObj: triggers,
+		Actions:              taskActions,
+		Context:              context,
+		Principal:            taskPrincipal,
+		Settings:             taskSettings,
+		RegistrationInfo:     registrationInfo,
+		Triggers:             taskTriggers,
 	}
 
 	RegisteredTask := RegisteredTask{
-		taskObj:		task,
-		Name:			name,
-		Path:			path,
-		Definition:		taskDef,
-		Enabled:		enabled,
-		State:			state,
-		MissedRuns:		missedRuns,
-		NextRunTime:	nextRunTime,
-		LastRunTime:	lastRunTime,
-		LastTaskResult:	lastTaskResult,
+		taskObj:        task,
+		Name:           name,
+		Path:           path,
+		Definition:     taskDef,
+		Enabled:        enabled,
+		State:          state,
+		MissedRuns:     missedRuns,
+		NextRunTime:    nextRunTime,
+		LastRunTime:    lastRunTime,
+		LastTaskResult: lastTaskResult,
 	}
 
 	return RegisteredTask, nil
@@ -346,13 +346,13 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		workingDir := oleutil.MustGetProperty(action, "WorkingDirectory").ToString()
 
 		execAction := ExecAction{
-			TaskAction: 	TaskAction{
-				ID:			id,
-				Type:		actionType,
+			TaskAction: TaskAction{
+				ID:   id,
+				Type: actionType,
 			},
-			Path: 			path,
-			Args: 			args,
-			WorkingDir: 	workingDir,
+			Path:       path,
+			Args:       args,
+			WorkingDir: workingDir,
 		}
 
 		return execAction, nil
@@ -361,12 +361,12 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		data := oleutil.MustGetProperty(action, "Data").ToString()
 
 		comHandlerAction := ComHandlerAction{
-			TaskAction: 	TaskAction{
-				ID:			id,
-				Type:		actionType,
+			TaskAction: TaskAction{
+				ID:   id,
+				Type: actionType,
 			},
-			ClassID: 		classID,
-			Data:			data,
+			ClassID: classID,
+			Data:    data,
 		}
 
 		return comHandlerAction, nil
@@ -384,12 +384,12 @@ func parsePrincipal(taskDef *ole.IDispatch) Principal {
 	userID := oleutil.MustGetProperty(taskDef, "UserId").ToString()
 
 	principle := Principal{
-		Name:		name,
-		GroupID: 	groupID,
-		ID:			id,
-		LogonType:	logonType,
-		RunLevel:	runLevel,
-		UserID:		userID,
+		Name:      name,
+		GroupID:   groupID,
+		ID:        id,
+		LogonType: logonType,
+		RunLevel:  runLevel,
+		UserID:    userID,
 	}
 
 	return principle
@@ -406,14 +406,14 @@ func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
 	version := oleutil.MustGetProperty(regInfo, "Version").ToString()
 
 	registrationInfo := RegistrationInfo{
-		Author:				author,
-		Date:				date,
-		Description:		description,
-		Documentation:		documentation,
-		SecurityDescriptor:	securityDescriptor,
-		Source:				source,
-		URI:				uri,
-		Version:			version,
+		Author:             author,
+		Date:               date,
+		Description:        description,
+		Documentation:      documentation,
+		SecurityDescriptor: securityDescriptor,
+		Source:             source,
+		URI:                uri,
+		Version:            version,
 	}
 
 	return registrationInfo
@@ -421,7 +421,7 @@ func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
 
 func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	allowDemandStart := oleutil.MustGetProperty(settings, "AllowDemandStart").Value().(bool)
-	allowHardTerminate  := oleutil.MustGetProperty(settings, "AllowHardTerminate").Value().(bool)
+	allowHardTerminate := oleutil.MustGetProperty(settings, "AllowHardTerminate").Value().(bool)
 	compatibility := int(oleutil.MustGetProperty(settings, "Compatibility").Val)
 	deleteExpiredTaskAfter := oleutil.MustGetProperty(settings, "DeleteExpiredTaskAfter").ToString()
 	dontStartOnBatteries := oleutil.MustGetProperty(settings, "DisallowStartIfOnBatteries").Value().(bool)
@@ -453,37 +453,37 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	wakeToRun := oleutil.MustGetProperty(settings, "WakeToRun").Value().(bool)
 
 	idleTaskSettings := IdleSettings{
-		IdleDuration:		idleDuration,
-		RestartOnIdle:		restartOnIdle,
-		StopOnIdleEnd:		stopOnIdleEnd,
-		WaitTimeout:		waitTimeOut,
+		IdleDuration:  idleDuration,
+		RestartOnIdle: restartOnIdle,
+		StopOnIdleEnd: stopOnIdleEnd,
+		WaitTimeout:   waitTimeOut,
 	}
 
 	networkTaskSettings := NetworkSettings{
-		ID: 	id,
-		Name:	name,
+		ID:   id,
+		Name: name,
 	}
 
 	taskSettings := TaskSettings{
-		AllowDemandStart:			allowDemandStart,
-		AllowHardTerminate:			allowHardTerminate,
-		Compatibility:				compatibility,
-		DeleteExpiredTaskAfter:		deleteExpiredTaskAfter,
-		DontStartOnBatteries:		dontStartOnBatteries,
-		Enabled:					enabled,
-		TimeLimit:					timeLimit,
-		Hidden:						hidden,
-		IdleSettings:				idleTaskSettings,
-		MultipleInstances:			multipleInstances,
-		NetworkSettings:			networkTaskSettings,
-		Priority:					priority,
-		RestartCount:				restartCount,
-		RestartInterval:			restartInterval,
-		RunOnlyIfIdle:				runOnlyIfIdle,
-		RunOnlyIfNetworkAvalible:	runOnlyIfNetworkAvalible,
-		StartWhenAvalible:			startWhenAvalible,
-		StopIfGoingOnBatteries:		stopIfGoingOnBatteries,
-		WakeToRun:					wakeToRun,
+		AllowDemandStart:         allowDemandStart,
+		AllowHardTerminate:       allowHardTerminate,
+		Compatibility:            compatibility,
+		DeleteExpiredTaskAfter:   deleteExpiredTaskAfter,
+		DontStartOnBatteries:     dontStartOnBatteries,
+		Enabled:                  enabled,
+		TimeLimit:                timeLimit,
+		Hidden:                   hidden,
+		IdleSettings:             idleTaskSettings,
+		MultipleInstances:        multipleInstances,
+		NetworkSettings:          networkTaskSettings,
+		Priority:                 priority,
+		RestartCount:             restartCount,
+		RestartInterval:          restartInterval,
+		RunOnlyIfIdle:            runOnlyIfIdle,
+		RunOnlyIfNetworkAvalible: runOnlyIfNetworkAvalible,
+		StartWhenAvalible:        startWhenAvalible,
+		StopIfGoingOnBatteries:   stopIfGoingOnBatteries,
+		WakeToRun:                wakeToRun,
 	}
 
 	return taskSettings
@@ -505,19 +505,19 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	triggerType := int(oleutil.MustGetProperty(trigger, "Type").Val)
 
 	repetitionObj := RepetitionPattern{
-		Duration:			duration,
-		Interval:			interval,
-		StopAtDurationEnd:	stopAtDurationEnd,
+		Duration:          duration,
+		Interval:          interval,
+		StopAtDurationEnd: stopAtDurationEnd,
 	}
 
 	taskTriggerObj := TaskTrigger{
-		Enabled:				enabled,
-		EndBoundary:			endBoundary,
-		ExecutionTimeLimit: 	executionTimeLimit,
-		ID:						id,
-		Repetition:				repetitionObj,
-		StartBoundary:			startBoundary,
-		Type:					triggerType,
+		Enabled:            enabled,
+		EndBoundary:        endBoundary,
+		ExecutionTimeLimit: executionTimeLimit,
+		ID:                 id,
+		Repetition:         repetitionObj,
+		StartBoundary:      startBoundary,
+		Type:               triggerType,
 	}
 
 	switch triggerType {
@@ -525,8 +525,8 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
 
 		bootTrigger := BootTrigger{
-			TaskTrigger:	taskTriggerObj,
-			Delay:			delay,
+			TaskTrigger: taskTriggerObj,
+			Delay:       delay,
 		}
 
 		return bootTrigger, nil
@@ -535,9 +535,9 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
 
 		dailyTrigger := DailyTrigger{
-			TaskTrigger:	taskTriggerObj,
-			DaysInterval:	daysInterval,
-			RandomDelay:	randomDelay,
+			TaskTrigger:  taskTriggerObj,
+			DaysInterval: daysInterval,
+			RandomDelay:  randomDelay,
 		}
 
 		return dailyTrigger, nil
@@ -563,21 +563,21 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		}
 
 		valueQueries := ValueQueries{
-			valueQueriesObj: 	valueQueriesObj,
-			ValueQueries:		valQueryMap,
+			valueQueriesObj: valueQueriesObj,
+			ValueQueries:    valQueryMap,
 		}
 
 		eventTrigger := EventTrigger{
-			TaskTrigger:	taskTriggerObj,
-			Delay:			delay,
-			Subscription:	subscription,
-			ValueQueries:	valueQueries,
+			TaskTrigger:  taskTriggerObj,
+			Delay:        delay,
+			Subscription: subscription,
+			ValueQueries: valueQueries,
 		}
 
 		return eventTrigger, nil
 	case TASK_TRIGGER_IDLE:
 		idleTrigger := IdleTrigger{
-			TaskTrigger: 	taskTriggerObj,
+			TaskTrigger: taskTriggerObj,
 		}
 
 		return idleTrigger, nil
@@ -586,9 +586,9 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		userID := oleutil.MustGetProperty(trigger, "UserId").ToString()
 
 		logonTrigger := LogonTrigger{
-			TaskTrigger: 	taskTriggerObj,
-			Delay:			delay,
-			UserID:			userID,
+			TaskTrigger: taskTriggerObj,
+			Delay:       delay,
+			UserID:      userID,
 		}
 
 		return logonTrigger, nil
@@ -600,12 +600,12 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		weeksOfMonth := int(oleutil.MustGetProperty(trigger, "WeeksOfMonth").Val)
 
 		monthlyDOWTrigger := MonthlyDOWTrigger{
-			TaskTrigger:			taskTriggerObj,
-			DaysOfWeek:				daysOfWeek,
-			MonthsOfYear:			monthsOfYear,
-			RandomDelay:			randomDelay,
-			RunOnLastWeekOnMonth:	runOnLastWeekOnMonth,
-			WeeksOfMonth:			weeksOfMonth,
+			TaskTrigger:          taskTriggerObj,
+			DaysOfWeek:           daysOfWeek,
+			MonthsOfYear:         monthsOfYear,
+			RandomDelay:          randomDelay,
+			RunOnLastWeekOnMonth: runOnLastWeekOnMonth,
+			WeeksOfMonth:         weeksOfMonth,
 		}
 
 		return monthlyDOWTrigger, nil
@@ -616,11 +616,11 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		runOnLastWeekOnMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOnMonth").Value().(bool)
 
 		monthlyTrigger := MonthlyTrigger{
-			TaskTrigger:			taskTriggerObj,
-			DaysOfMonth:			daysOfMonth,
-			MonthsOfYear:			monthsOfYear,
-			RandomDelay:			randomDelay,
-			RunOnLastWeekOnMonth:	runOnLastWeekOnMonth,
+			TaskTrigger:          taskTriggerObj,
+			DaysOfMonth:          daysOfMonth,
+			MonthsOfYear:         monthsOfYear,
+			RandomDelay:          randomDelay,
+			RunOnLastWeekOnMonth: runOnLastWeekOnMonth,
 		}
 
 		return monthlyTrigger, nil
@@ -628,8 +628,8 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
 
 		registrationTrigger := RegistrationTrigger{
-			TaskTrigger:	taskTriggerObj,
-			Delay:			delay,
+			TaskTrigger: taskTriggerObj,
+			Delay:       delay,
 		}
 
 		return registrationTrigger, nil
@@ -637,8 +637,8 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
 
 		timetrigger := TimeTrigger{
-			TaskTrigger:	taskTriggerObj,
-			RandomDelay: 	randomDelay,
+			TaskTrigger: taskTriggerObj,
+			RandomDelay: randomDelay,
 		}
 
 		return timetrigger, nil
@@ -648,16 +648,16 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		weeksInterval := int(oleutil.MustGetProperty(trigger, "WeeksInterval").Val)
 
 		weeklyTrigger := WeeklyTrigger{
-			TaskTrigger: 	taskTriggerObj,
-			DaysOfWeek:		daysOfWeek,
-			RandomDelay:	randomDelay,
-			WeeksInterval:	weeksInterval,
+			TaskTrigger:   taskTriggerObj,
+			DaysOfWeek:    daysOfWeek,
+			RandomDelay:   randomDelay,
+			WeeksInterval: weeksInterval,
 		}
 
 		return weeklyTrigger, nil
 	case TASK_TRIGGER_SESSION_STATE_CHANGE:
 		sessionStateChangeTrigger := SessionStateChangeTrigger{
-			TaskTrigger: 	taskTriggerObj,
+			TaskTrigger: taskTriggerObj,
 		}
 
 		return sessionStateChangeTrigger, nil
