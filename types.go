@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	TASK_VALIDATE_ONLY = iota
-	TASK_CREATE
-	TASK_UPDATE
-	TASK_CREATE_OR_UPDATE
-	TASK_DISABLE
-	TASK_DONT_ADD_PRINCIPAL_ACE
-	TASK_IGNORE_REGISTRATION_TRIGGERS
+	TASK_VALIDATE_ONLY                = 1
+	TASK_CREATE                       = 2
+	TASK_UPDATE                       = 4
+	TASK_CREATE_OR_UPDATE             = 6
+	TASK_DISABLE                      = 8
+	TASK_DONT_ADD_PRINCIPAL_ACE       = 0x10
+	TASK_IGNORE_REGISTRATION_TRIGGERS = 0x20
 )
 
 const (
@@ -30,11 +30,10 @@ const (
 )
 
 const (
-	TASK_ACTION_EXEC           = 0
-	TASK_ACTION_COM_HANDLER    = 1
-	TASK_ACTION_SEND_EMAIL     = 2
-	TASK_ACTION_SHOW_MESSAGE   = 3
-	TASK_ACTION_CUSTOM_HANDLER = 5
+	TASK_ACTION_EXEC         = 0
+	TASK_ACTION_COM_HANDLER  = 5
+	TASK_ACTION_SEND_EMAIL   = 6
+	TASK_ACTION_SHOW_MESSAGE = 7
 )
 
 const (
@@ -65,18 +64,27 @@ const (
 )
 
 const (
-	TASK_TRIGGER_EVENT = iota
-	TASK_TRIGGER_TIME
-	TASK_TRIGGER_DAILY
-	TASK_TRIGGER_WEEKLY
-	TASK_TRIGGER_MONTHLY
-	TASK_TRIGGER_MONTHLYDOW
-	TASK_TRIGGER_IDLE
-	TASK_TRIGGER_REGISTRATION
-	TASK_TRIGGER_BOOT
-	TASK_TRIGGER_LOGON
-	TASK_TRIGGER_SESSION_STATE_CHANGE
-	TASK_TRIGGER_CUSTOM_TRIGGER_01
+	TASK_TRIGGER_EVENT                = 0
+	TASK_TRIGGER_TIME                 = 1
+	TASK_TRIGGER_DAILY                = 2
+	TASK_TRIGGER_WEEKLY               = 3
+	TASK_TRIGGER_MONTHLY              = 4
+	TASK_TRIGGER_MONTHLYDOW           = 5
+	TASK_TRIGGER_IDLE                 = 6
+	TASK_TRIGGER_REGISTRATION         = 7
+	TASK_TRIGGER_BOOT                 = 8
+	TASK_TRIGGER_LOGON                = 9
+	TASK_TRIGGER_SESSION_STATE_CHANGE = 11
+	TASK_TRIGGER_CUSTOM_TRIGGER_01    = 12
+)
+
+const (
+	TASK_CONSOLE_CONNECT = iota
+	TASK_CONSOLE_DISCONNECT
+	TASK_REMOTE_CONNECT
+	TASK_REMOTE_DISCONNECT
+	TASK_SESSION_LOCK
+	TASK_SESSION_UNLOCK
 )
 
 type TaskService struct {
@@ -316,6 +324,13 @@ type WeeklyTrigger struct {
 
 type SessionStateChangeTrigger struct {
 	TaskTrigger
+	Delay       string
+	StateChange int
+	UserId      string
+}
+
+type CustomTrigger struct {
+	TaskTrigger
 }
 
 func (e ExecAction) GetType() int {
@@ -376,4 +391,8 @@ func (w WeeklyTrigger) GetType() int {
 
 func (s SessionStateChangeTrigger) GetType() int {
 	return s.TaskTrigger.Type
+}
+
+func (c CustomTrigger) GetType() int {
+	return c.TaskTrigger.Type
 }

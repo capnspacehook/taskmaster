@@ -110,6 +110,7 @@ func (t *TaskService) Cleanup() {
 // GetRunningTasks enumerates the Task Scheduler database for all currently running tasks
 func (t *TaskService) GetRunningTasks() error {
 	var err error
+	t.RunningTasks = nil
 
 	runningTasks := oleutil.MustCallMethod(t.taskServiceObj, "GetRunningTasks", TASK_ENUM_HIDDEN).ToIDispatch()
 	defer runningTasks.Release()
@@ -131,6 +132,7 @@ func (t *TaskService) GetRunningTasks() error {
 // GetRegisteredTasks enumerates the Task Scheduler database for all currently registered tasks
 func (t *TaskService) GetRegisteredTasks() error {
 	var err error
+	t.RegisteredTasks = nil
 
 	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
 	rootFolder := TaskFolder{
@@ -356,7 +358,7 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		}
 
 		return execAction, nil
-	case TASK_ACTION_COM_HANDLER, TASK_ACTION_CUSTOM_HANDLER:
+	case TASK_ACTION_COM_HANDLER:
 		classID := oleutil.MustGetProperty(action, "ClassId").ToString()
 		data := oleutil.MustGetProperty(action, "Data").ToString()
 
@@ -656,11 +658,25 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return weeklyTrigger, nil
 	case TASK_TRIGGER_SESSION_STATE_CHANGE:
+		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
+		stateChange := int(oleutil.MustGetProperty(trigger, "StateChange").Val)
+		userID := oleutil.MustGetProperty(trigger, "UserId").ToString()
+
 		sessionStateChangeTrigger := SessionStateChangeTrigger{
 			TaskTrigger: taskTriggerObj,
+			Delay:       delay,
+			StateChange: stateChange,
+			UserId:      userID,
 		}
 
 		return sessionStateChangeTrigger, nil
+	case TASK_TRIGGER_CUSTOM_TRIGGER_01:
+		customTrigger := CustomTrigger{
+			TaskTrigger: taskTriggerObj,
+		}
+
+		return customTrigger, nil
+
 	default:
 		return nil, errors.New("unsupported ITrigger type")
 	}
