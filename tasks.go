@@ -615,7 +615,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		daysOfMonth := int(oleutil.MustGetProperty(trigger, "DaysOfMonth").Val)
 		monthsOfYear := int(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
-		runOnLastWeekOnMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOnMonth").Value().(bool)
+		runOnLastWeekOnMonth := oleutil.MustGetProperty(trigger, "RunOnLastDayOfMonth").Value().(bool)
 
 		monthlyTrigger := MonthlyTrigger{
 			TaskTrigger:          taskTriggerObj,
