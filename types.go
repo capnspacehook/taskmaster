@@ -382,3 +382,18 @@ func (t TaskTrigger) GetStartBoundary() string {
 func (t TaskTrigger) GetStopAtDurationEnd() bool {
 	return t.StopAtDurationEnd
 }
+
+func (d Definition) AddExecAction(path, args, workingDir string) {
+	d.Actions = append(d.Actions, ExecAction{
+		Path:       path,
+		Args:       args,
+		WorkingDir: workingDir,
+	})
+}
+
+func (d Definition) AddComHandlerAction(clsid, data string) {
+	d.Actions = append(d.Actions, ComHandlerAction{
+		ClassID: clsid,
+		Data:    data,
+	})
+}

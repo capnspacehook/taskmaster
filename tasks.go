@@ -13,6 +13,8 @@ const (
 	TASK_ENUM_HIDDEN = 1
 )
 
+var taskDateFormat = "2006-01-02T15:04:05.0000000"
+
 func (t *TaskService) initialize() error {
 	var err error
 
@@ -660,6 +662,50 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	}
 }
 
+func NewTaskDefinition() Definition {
+	newDef := Definition{}
+
+	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
+	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
+
+	newDef.RegistrationInfo.Date = TimeToTaskDate(time.Now())
+
+	newDef.Settings.AllowDemandStart = true
+	newDef.Settings.AllowHardTerminate = true
+	newDef.Settings.Compatibility = TASK_COMPATIBILITY_V2
+	newDef.Settings.DontStartOnBatteries = true
+	newDef.Settings.Enabled = true
+	newDef.Settings.Hidden = false
+	newDef.Settings.IdleSettings.IdleDuration = "PT10M"
+	newDef.Settings.IdleSettings.WaitTimeout = "PT1H"
+	newDef.Settings.MultipleInstances = TASK_INSTANCES_IGNORE_NEW
+	newDef.Settings.Priority = 7
+	newDef.Settings.RestartCount = 0
+	newDef.Settings.RestartOnIdle = false
+	newDef.Settings.RunOnlyIfIdle = false
+	newDef.Settings.RunOnlyIfNetworkAvalible = false
+	newDef.Settings.StartWhenAvalible = false
+	newDef.Settings.StopIfGoingOnBatteries = true
+	newDef.Settings.StopOnIdleEnd = true
+	newDef.Settings.TimeLimit = "PT72H"
+	newDef.Settings.WakeToRun = false
+
+	return newDef
+}
+
+func TimeToTaskDate(t time.Time) string {
+	return t.Format(taskDateFormat)
+}
+
+func TaskDateToTime(s string) (time.Time, error) {
+	t, err := time.Parse(taskDateFormat, s)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return t, nil
+}
+
 func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType int, overwrite bool) (bool, error) {
 	var err error
 
@@ -670,28 +716,82 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	nameIndex := strings.LastIndex(path, "\\")
 	folderPath := path[:nameIndex]
 
+	if !t.doesTaskFolderExist(folderPath) {
+		oleutil.MustCallMethod(t.RootFolder.folderObj, "CreateFolder", folderPath, "")
+	} else {
+		_, err = oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
+		if err == nil {
+			if !overwrite {
+				return false, nil
+			}
+			oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
+		}
+	}
+
+	_, err = t.modifyTask(path, newTaskDef, username, password, logonType, TASK_CREATE)
+	if err != nil {
+		return false, err
+	}
+
+	// TODO: update taskService with possibly new folders and the new task
+
+	return true, nil
+}
+
+func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType int) error {
+	var err error
+
+	if path[0] != '\\' {
+		return errors.New("path must start with root folder '\\'")
+	}
+
+	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
+	if err == nil {
+		return errors.New("registered task doesn't exist")
+	}
+
+	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_UPDATE)
+	if err != nil {
+		return err
+	}
+
+	for _, task := range t.RegisteredTasks {
+		if task.Path == path {
+			newTask, err := parseRegisteredTask(newTaskObj)
+			if err != nil {
+				return err
+			}
+			task = &newTask
+		}
+	}
+
+	return nil
+}
+
+func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType int, flags int) (*ole.IDispatch, error) {
+	var err error
+
 	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()
 	defer newTaskDefObj.Release()
 
 	err = fillDefinitionObj(newTaskDef, newTaskDefObj)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	if !t.doesTaskFolderExist(folderPath) {
-		oleutil.MustCallMethod(t.RootFolder.folderObj, "CreateFolder", folderPath, "")
+	// make sure registration triggers won't trigger themselves
+	for _, trigger := range newTaskDef.Triggers {
+		if trigger.GetType() == TASK_TRIGGER_REGISTRATION {
+			flags |= TASK_IGNORE_REGISTRATION_TRIGGERS
+		}
 	}
 
-	if overwrite {
-		oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
-	}
-
-	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, 2, username, password, logonType, "")
+	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, flags, username, password, logonType, "")
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return true, nil
+	return newTaskObj.ToIDispatch(), nil
 }
 
 func (t *TaskService) doesTaskFolderExist(path string) bool {
