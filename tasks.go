@@ -57,10 +57,12 @@ func (t *TaskService) Connect() error {
 	}
 
 	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
-	rootFolder := TaskFolder{
+	rootFolder := RootFolder{
 		folderObj: rootFolderObj,
-		Name:      "\\",
-		Path:      "\\",
+		TaskFolder: TaskFolder{
+			Name: "\\",
+			Path: "\\",
+		},
 	}
 	t.RootFolder = rootFolder
 
@@ -77,27 +79,11 @@ func (t *TaskService) Cleanup() {
 		runningTask.taskObj.Release()
 	}
 
-	var releaseFolderObjs func(*TaskFolder)
-	releaseFolderObjs = func(taskFolder *TaskFolder) {
-		taskFolder.folderObj.Release()
-		for _, subFolder := range taskFolder.SubFolders {
-			releaseFolderObjs(subFolder)
-		}
-	}
 	if t.RootFolder.folderObj != nil {
-		releaseFolderObjs(&t.RootFolder)
+		t.RootFolder.folderObj.Release()
 	}
 
 	for _, registeredTask := range t.RegisteredTasks {
-		registeredTask.Definition.actionCollectionObj.Release()
-		registeredTask.Definition.triggerCollectionObj.Release()
-
-		for _, trigger := range registeredTask.Definition.Triggers {
-			if trigger.GetType() == TASK_TRIGGER_EVENT {
-				trigger.(EventTrigger).ValueQueries.valueQueriesObj.Release()
-			}
-		}
-
 		registeredTask.taskObj.Release()
 	}
 
@@ -162,6 +148,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 		var enumTaskFolders func(*ole.VARIANT) error
 		enumTaskFolders = func(v *ole.VARIANT) error {
 			taskFolder := v.ToIDispatch()
+			defer taskFolder.Release()
 
 			name := oleutil.MustGetProperty(taskFolder, "Name").ToString()
 			path := oleutil.MustGetProperty(taskFolder, "Path").ToString()
@@ -169,9 +156,8 @@ func (t *TaskService) GetRegisteredTasks() error {
 			defer taskCollection.Release()
 
 			taskSubFolder := &TaskFolder{
-				folderObj: taskFolder,
-				Name:      name,
-				Path:      path,
+				Name: name,
+				Path: path,
 			}
 
 			var err error
@@ -207,7 +193,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 		return enumTaskFolders
 	}
 
-	err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(&t.RootFolder))
+	err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(&t.RootFolder.TaskFolder))
 	if err != nil {
 		return err
 	}
@@ -251,6 +237,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	definition := oleutil.MustGetProperty(task, "Definition").ToIDispatch()
 	defer definition.Release()
 	actions := oleutil.MustGetProperty(definition, "Actions").ToIDispatch()
+	defer actions.Release()
 	context := oleutil.MustGetProperty(actions, "Context").ToString()
 
 	var taskActions []Action
@@ -284,6 +271,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	taskSettings := parseTaskSettings(settings)
 
 	triggers := oleutil.MustGetProperty(definition, "Triggers").ToIDispatch()
+	defer triggers.Release()
 
 	var taskTriggers []Trigger
 	err = oleutil.ForEach(triggers, func(v *ole.VARIANT) error {
@@ -303,14 +291,12 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	}
 
 	taskDef := Definition{
-		actionCollectionObj:  actions,
-		triggerCollectionObj: triggers,
-		Actions:              taskActions,
-		Context:              context,
-		Principal:            taskPrincipal,
-		Settings:             taskSettings,
-		RegistrationInfo:     registrationInfo,
-		Triggers:             taskTriggers,
+		Actions:          taskActions,
+		Context:          context,
+		Principal:        taskPrincipal,
+		Settings:         taskSettings,
+		RegistrationInfo: registrationInfo,
+		Triggers:         taskTriggers,
 	}
 
 	RegisteredTask := RegisteredTask{
@@ -543,6 +529,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
 		subscription := oleutil.MustGetProperty(trigger, "Subscription").ToString()
 		valueQueriesObj := oleutil.MustGetProperty(trigger, "ValueQueries").ToIDispatch()
+		defer valueQueriesObj.Release()
 
 		valQueryMap := make(map[string]string)
 		err := oleutil.ForEach(valueQueriesObj, func(v *ole.VARIANT) error {
@@ -560,16 +547,11 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 			return nil, err
 		}
 
-		valueQueries := ValueQueries{
-			valueQueriesObj: valueQueriesObj,
-			ValueQueries:    valQueryMap,
-		}
-
 		eventTrigger := EventTrigger{
 			TaskTrigger:  taskTriggerObj,
 			Delay:        delay,
 			Subscription: subscription,
-			ValueQueries: valueQueries,
+			ValueQueries: valQueryMap,
 		}
 
 		return eventTrigger, nil
@@ -904,7 +886,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			valueQueriesObj := oleutil.MustGetProperty(eventTriggerObj, "ValueQueries").ToIDispatch()
 			defer valueQueriesObj.Release()
 
-			for name, value := range eventTrigger.ValueQueries.ValueQueries {
+			for name, value := range eventTrigger.ValueQueries {
 				oleutil.MustCallMethod(valueQueriesObj, "Create", name, value)
 			}
 		case TASK_TRIGGER_IDLE:

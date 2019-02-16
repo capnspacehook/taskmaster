@@ -92,13 +92,17 @@ type TaskService struct {
 	isInitialized  bool
 	isConnected    bool
 
-	RootFolder      TaskFolder
+	RootFolder      RootFolder
 	RunningTasks    []*RunningTask
 	RegisteredTasks []*RegisteredTask
 }
 
+type RootFolder struct {
+	folderObj *ole.IDispatch
+	TaskFolder
+}
+
 type TaskFolder struct {
-	folderObj       *ole.IDispatch
 	Name            string
 	Path            string
 	SubFolders      []*TaskFolder
@@ -129,16 +133,14 @@ type RegisteredTask struct {
 }
 
 type Definition struct {
-	actionCollectionObj  *ole.IDispatch
-	triggerCollectionObj *ole.IDispatch
-	Actions              []Action
-	Context              string
-	Data                 string
-	Principal            Principal
-	RegistrationInfo     RegistrationInfo
-	Settings             TaskSettings
-	Triggers             []Trigger
-	XMLText              string
+	Actions          []Action
+	Context          string
+	Data             string
+	Principal        Principal
+	RegistrationInfo RegistrationInfo
+	Settings         TaskSettings
+	Triggers         []Trigger
+	XMLText          string
 }
 
 type Action interface {
@@ -283,12 +285,7 @@ type EventTrigger struct {
 	TaskTrigger
 	Delay        string
 	Subscription string
-	ValueQueries ValueQueries
-}
-
-type ValueQueries struct {
-	valueQueriesObj *ole.IDispatch
-	ValueQueries    map[string]string
+	ValueQueries map[string]string
 }
 
 type IdleTrigger struct {
