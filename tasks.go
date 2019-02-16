@@ -2,6 +2,7 @@ package taskmaster
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	ole "github.com/go-ole/go-ole"
@@ -50,21 +51,18 @@ func (t *TaskService) Connect() error {
 		}
 	}
 
-	connectResult := oleutil.MustCallMethod(t.taskServiceObj, "Connect").Val
-	if connectResult != 0 {
-		switch connectResult {
-		case 0x80070005:
-			return errors.New("access is denied to connect to the task scheduler service")
-		case 0x80041315:
-			return errors.New("the task scheduler service is not running")
-		case 0x8007000e:
-			return errors.New("the application does not have enough memory to complete the operation")
-		case 53:
-			return errors.New("the computer name specified in the serverName parameter does not exist")
-		case 50:
-			return errors.New("the remote computer does not support remote task scheduling")
-		}
+	_, err := oleutil.CallMethod(t.taskServiceObj, "Connect")
+	if err != nil {
+		return err
 	}
+
+	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
+	rootFolder := TaskFolder{
+		folderObj: rootFolderObj,
+		Name:      "\\",
+		Path:      "\\",
+	}
+	t.RootFolder = rootFolder
 
 	t.isConnected = true
 
@@ -86,7 +84,9 @@ func (t *TaskService) Cleanup() {
 			releaseFolderObjs(subFolder)
 		}
 	}
-	releaseFolderObjs(&t.RootFolder)
+	if t.RootFolder.folderObj != nil {
+		releaseFolderObjs(&t.RootFolder)
+	}
 
 	for _, registeredTask := range t.RegisteredTasks {
 		registeredTask.Definition.actionCollectionObj.Release()
@@ -134,15 +134,8 @@ func (t *TaskService) GetRegisteredTasks() error {
 	var err error
 	t.RegisteredTasks = nil
 
-	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
-	rootFolder := TaskFolder{
-		folderObj: rootFolderObj,
-		Name:      "\\",
-		Path:      "\\",
-	}
-
 	// get tasks from root folder
-	rootTaskCollection := oleutil.MustCallMethod(rootFolderObj, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+	rootTaskCollection := oleutil.MustCallMethod(t.RootFolder.folderObj, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
 	defer rootTaskCollection.Release()
 	err = oleutil.ForEach(rootTaskCollection, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
@@ -152,7 +145,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 			return err
 		}
 		t.RegisteredTasks = append(t.RegisteredTasks, &registeredTask)
-		rootFolder.RegisteredTasks = append(rootFolder.RegisteredTasks, &registeredTask)
+		t.RootFolder.RegisteredTasks = append(t.RootFolder.RegisteredTasks, &registeredTask)
 
 		return nil
 	})
@@ -160,7 +153,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 		return err
 	}
 
-	taskFolderList := oleutil.MustCallMethod(rootFolderObj, "GetFolders", 0).ToIDispatch()
+	taskFolderList := oleutil.MustCallMethod(t.RootFolder.folderObj, "GetFolders", 0).ToIDispatch()
 	defer taskFolderList.Release()
 
 	// recursively enumerate folders and tasks
@@ -214,11 +207,10 @@ func (t *TaskService) GetRegisteredTasks() error {
 		return enumTaskFolders
 	}
 
-	err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(&rootFolder))
+	err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(&t.RootFolder))
 	if err != nil {
 		return err
 	}
-	t.RootFolder = rootFolder
 
 	return nil
 }
@@ -349,8 +341,10 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 
 		execAction := ExecAction{
 			TaskAction: TaskAction{
-				ID:   id,
-				Type: actionType,
+				ID: id,
+				TypeHolder: TypeHolder{
+					Type: actionType,
+				},
 			},
 			Path:       path,
 			Args:       args,
@@ -364,8 +358,10 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 
 		comHandlerAction := ComHandlerAction{
 			TaskAction: TaskAction{
-				ID:   id,
-				Type: actionType,
+				ID: id,
+				TypeHolder: TypeHolder{
+					Type: actionType,
+				},
 			},
 			ClassID: classID,
 			Data:    data,
@@ -377,13 +373,13 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 	}
 }
 
-func parsePrincipal(taskDef *ole.IDispatch) Principal {
-	name := oleutil.MustGetProperty(taskDef, "DisplayName").ToString()
-	groupID := oleutil.MustGetProperty(taskDef, "GroupId").ToString()
-	id := oleutil.MustGetProperty(taskDef, "Id").ToString()
-	logonType := int(oleutil.MustGetProperty(taskDef, "LogonType").Val)
-	runLevel := int(oleutil.MustGetProperty(taskDef, "RunLevel").Val)
-	userID := oleutil.MustGetProperty(taskDef, "UserId").ToString()
+func parsePrincipal(principleObj *ole.IDispatch) Principal {
+	name := oleutil.MustGetProperty(principleObj, "DisplayName").ToString()
+	groupID := oleutil.MustGetProperty(principleObj, "GroupId").ToString()
+	id := oleutil.MustGetProperty(principleObj, "Id").ToString()
+	logonType := int(oleutil.MustGetProperty(principleObj, "LogonType").Val)
+	runLevel := int(oleutil.MustGetProperty(principleObj, "RunLevel").Val)
+	userID := oleutil.MustGetProperty(principleObj, "UserId").ToString()
 
 	principle := Principal{
 		Name:      name,
@@ -506,20 +502,20 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	startBoundary := oleutil.MustGetProperty(trigger, "StartBoundary").ToString()
 	triggerType := int(oleutil.MustGetProperty(trigger, "Type").Val)
 
-	repetitionObj := RepetitionPattern{
-		Duration:          duration,
-		Interval:          interval,
-		StopAtDurationEnd: stopAtDurationEnd,
-	}
-
 	taskTriggerObj := TaskTrigger{
 		Enabled:            enabled,
 		EndBoundary:        endBoundary,
 		ExecutionTimeLimit: executionTimeLimit,
 		ID:                 id,
-		Repetition:         repetitionObj,
-		StartBoundary:      startBoundary,
-		Type:               triggerType,
+		RepetitionPattern: RepetitionPattern{
+			Duration:          duration,
+			Interval:          interval,
+			StopAtDurationEnd: stopAtDurationEnd,
+		},
+		StartBoundary: startBoundary,
+		TypeHolder: TypeHolder{
+			Type: triggerType,
+		},
 	}
 
 	switch triggerType {
@@ -598,7 +594,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		daysOfWeek := int(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
 		monthsOfYear := int(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
-		runOnLastWeekOnMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOnMonth").Value().(bool)
+		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOfMonth").Value().(bool)
 		weeksOfMonth := int(oleutil.MustGetProperty(trigger, "WeeksOfMonth").Val)
 
 		monthlyDOWTrigger := MonthlyDOWTrigger{
@@ -606,7 +602,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 			DaysOfWeek:           daysOfWeek,
 			MonthsOfYear:         monthsOfYear,
 			RandomDelay:          randomDelay,
-			RunOnLastWeekOnMonth: runOnLastWeekOnMonth,
+			RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
 			WeeksOfMonth:         weeksOfMonth,
 		}
 
@@ -615,14 +611,14 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		daysOfMonth := int(oleutil.MustGetProperty(trigger, "DaysOfMonth").Val)
 		monthsOfYear := int(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
-		runOnLastWeekOnMonth := oleutil.MustGetProperty(trigger, "RunOnLastDayOfMonth").Value().(bool)
+		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastDayOfMonth").Value().(bool)
 
 		monthlyTrigger := MonthlyTrigger{
 			TaskTrigger:          taskTriggerObj,
 			DaysOfMonth:          daysOfMonth,
 			MonthsOfYear:         monthsOfYear,
 			RandomDelay:          randomDelay,
-			RunOnLastWeekOnMonth: runOnLastWeekOnMonth,
+			RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
 		}
 
 		return monthlyTrigger, nil
@@ -679,6 +675,333 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 	default:
 		return nil, errors.New("unsupported ITrigger type")
+	}
+}
+
+func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType int, overwrite bool) (bool, error) {
+	var err error
+
+	if path[0] != '\\' {
+		return false, errors.New("path must start with root folder '\\'")
+	}
+
+	nameIndex := strings.LastIndex(path, "\\")
+	folderPath := path[:nameIndex]
+
+	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()
+	defer newTaskDefObj.Release()
+
+	err = fillDefinitionObj(newTaskDef, newTaskDefObj)
+	if err != nil {
+		return false, err
+	}
+
+	if !t.doesTaskFolderExist(folderPath) {
+		oleutil.MustCallMethod(t.RootFolder.folderObj, "CreateFolder", folderPath, "")
+	}
+
+	if overwrite {
+		oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
+	}
+
+	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, 2, username, password, logonType, "")
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (t *TaskService) doesTaskFolderExist(path string) bool {
+	_, err := oleutil.CallMethod(t.taskServiceObj, "GetFolder", path)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func fillDefinitionObj(definition Definition, definitionObj *ole.IDispatch) error {
+	var err error
+
+	actionsObj := oleutil.MustGetProperty(definitionObj, "Actions").ToIDispatch()
+	defer actionsObj.Release()
+	oleutil.MustPutProperty(actionsObj, "Context", definition.Context)
+	err = fillActionsObj(definition.Actions, actionsObj)
+	if err != nil {
+		return err
+	}
+
+	oleutil.MustPutProperty(definitionObj, "Data", definition.Data)
+
+	principalObj := oleutil.MustGetProperty(definitionObj, "Principal").ToIDispatch()
+	defer principalObj.Release()
+	fillPrincipalObj(definition.Principal, principalObj)
+
+	regInfoObj := oleutil.MustGetProperty(definitionObj, "RegistrationInfo").ToIDispatch()
+	defer regInfoObj.Release()
+	fillRegistrationInfoObj(definition.RegistrationInfo, regInfoObj)
+
+	settingsObj := oleutil.MustGetProperty(definitionObj, "Settings").ToIDispatch()
+	defer settingsObj.Release()
+	fillTaskSettingsObj(definition.Settings, settingsObj)
+
+	triggersObj := oleutil.MustGetProperty(definitionObj, "Triggers").ToIDispatch()
+	defer triggersObj.Release()
+	err = fillTaskTriggersObj(definition.Triggers, triggersObj)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
+	for _, action := range actions {
+		actionType := action.GetType()
+		if !checkActionType(actionType) {
+			return errors.New("invalid action type")
+		}
+
+		actionObj := oleutil.MustCallMethod(actionsObj, "Create", actionType).ToIDispatch()
+		actionObj.Release()
+		oleutil.MustPutProperty(actionObj, "Id", action.GetID())
+
+		switch actionType {
+		case TASK_ACTION_EXEC:
+			execAction := action.(ExecAction)
+			exeActionObj := actionObj.MustQueryInterface(ole.NewGUID("{4c3d624d-fd6b-49a3-b9b7-09cb3cd3f047}"))
+			defer exeActionObj.Release()
+
+			oleutil.MustPutProperty(exeActionObj, "Arguments", execAction.Args)
+			oleutil.MustPutProperty(exeActionObj, "Path", execAction.Path)
+			oleutil.MustPutProperty(exeActionObj, "WorkingDirectory", execAction.WorkingDir)
+		case TASK_ACTION_COM_HANDLER:
+			comHandlerAction := action.(ComHandlerAction)
+			comHandlerActionObj := actionObj.MustQueryInterface(ole.NewGUID("{6d2fd252-75c5-4f66-90ba-2a7d8cc3039f}"))
+			defer comHandlerActionObj.Release()
+
+			oleutil.MustPutProperty(actionsObj, "ClassId", comHandlerAction.ClassID)
+			oleutil.MustPutProperty(actionsObj, "Data", comHandlerAction.Data)
+		}
+	}
+
+	return nil
+}
+
+func checkActionType(actionType int) bool {
+	switch actionType {
+	case TASK_ACTION_EXEC:
+		fallthrough
+	case TASK_ACTION_COM_HANDLER:
+		fallthrough
+	case TASK_ACTION_SEND_EMAIL:
+		fallthrough
+	case TASK_ACTION_SHOW_MESSAGE:
+		return true
+	default:
+		return false
+	}
+}
+
+func fillPrincipalObj(principal Principal, principalObj *ole.IDispatch) {
+	oleutil.MustPutProperty(principalObj, "DisplayName", principal.Name)
+	oleutil.MustPutProperty(principalObj, "GroupId", principal.GroupID)
+	oleutil.MustPutProperty(principalObj, "Id", principal.ID)
+	oleutil.MustPutProperty(principalObj, "LogonType", principal.LogonType)
+	oleutil.MustPutProperty(principalObj, "RunLevel", principal.RunLevel)
+	oleutil.MustPutProperty(principalObj, "UserId", principal.UserID)
+}
+
+func fillRegistrationInfoObj(regInfo RegistrationInfo, regInfoObj *ole.IDispatch) {
+	oleutil.MustPutProperty(regInfoObj, "Author", regInfo.Author)
+	oleutil.MustPutProperty(regInfoObj, "Date", regInfo.Date)
+	oleutil.MustPutProperty(regInfoObj, "Description", regInfo.Description)
+	oleutil.MustPutProperty(regInfoObj, "Documentation", regInfo.Documentation)
+	oleutil.MustPutProperty(regInfoObj, "SecurityDescriptor", regInfo.SecurityDescriptor)
+	oleutil.MustPutProperty(regInfoObj, "Source", regInfo.Source)
+	oleutil.MustPutProperty(regInfoObj, "URI", regInfo.URI)
+	oleutil.MustPutProperty(regInfoObj, "Version", regInfo.Version)
+}
+
+func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
+	oleutil.MustPutProperty(settingsObj, "AllowDemandStart", settings.AllowDemandStart)
+	oleutil.MustPutProperty(settingsObj, "AllowHardTerminate", settings.AllowHardTerminate)
+	oleutil.MustPutProperty(settingsObj, "Compatibility", settings.Compatibility)
+	oleutil.MustPutProperty(settingsObj, "DeleteExpiredTaskAfter", settings.DeleteExpiredTaskAfter)
+	oleutil.MustPutProperty(settingsObj, "DisallowStartIfOnBatteries", settings.DontStartOnBatteries)
+	oleutil.MustPutProperty(settingsObj, "Enabled", settings.Enabled)
+	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", settings.TimeLimit)
+	oleutil.MustPutProperty(settingsObj, "Hidden", settings.Hidden)
+
+	idlesettingsObj := oleutil.MustGetProperty(settingsObj, "IdleSettings").ToIDispatch()
+	defer idlesettingsObj.Release()
+	oleutil.MustPutProperty(idlesettingsObj, "IdleDuration", settings.IdleSettings.IdleDuration)
+	oleutil.MustPutProperty(idlesettingsObj, "RestartOnIdle", settings.IdleSettings.RestartOnIdle)
+	oleutil.MustPutProperty(idlesettingsObj, "StopOnIdleEnd", settings.IdleSettings.StopOnIdleEnd)
+	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", settings.IdleSettings.WaitTimeout)
+
+	oleutil.MustPutProperty(settingsObj, "MultipleInstances", settings.MultipleInstances)
+
+	networksettingsObj := oleutil.MustGetProperty(settingsObj, "NetworkSettings").ToIDispatch()
+	defer networksettingsObj.Release()
+	oleutil.MustPutProperty(networksettingsObj, "Id", settings.NetworkSettings.ID)
+	oleutil.MustPutProperty(networksettingsObj, "Name", settings.NetworkSettings.Name)
+
+	oleutil.MustPutProperty(settingsObj, "Priority", settings.Priority)
+	oleutil.MustPutProperty(settingsObj, "RestartCount", settings.RestartCount)
+	oleutil.MustPutProperty(settingsObj, "RestartInterval", settings.RestartInterval)
+	oleutil.MustPutProperty(settingsObj, "RunOnlyIfIdle", settings.RunOnlyIfIdle)
+	oleutil.MustPutProperty(settingsObj, "RunOnlyIfNetworkAvailable", settings.RunOnlyIfNetworkAvalible)
+	oleutil.MustPutProperty(settingsObj, "StartWhenAvailable", settings.StartWhenAvalible)
+	oleutil.MustPutProperty(settingsObj, "StopIfGoingOnBatteries", settings.StopIfGoingOnBatteries)
+	oleutil.MustPutProperty(settingsObj, "WakeToRun", settings.WakeToRun)
+}
+
+func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
+	for _, trigger := range triggers {
+		triggerType := trigger.GetType()
+		if !checkTriggerType(triggerType) {
+			return errors.New("invalid trigger type")
+		}
+		triggerObj := oleutil.MustCallMethod(triggersObj, "Create", triggerType).ToIDispatch()
+		defer triggerObj.Release()
+
+		oleutil.MustPutProperty(triggerObj, "Enabled", trigger.GetEnabled())
+		oleutil.MustPutProperty(triggerObj, "EndBoundary", trigger.GetEndBoundary())
+		oleutil.MustPutProperty(triggerObj, "ExecutionTimeLimit", trigger.GetExecutionTimeLimit())
+		oleutil.MustPutProperty(triggerObj, "Id", trigger.GetID())
+
+		repetitionObj := oleutil.MustGetProperty(triggerObj, "Repetition").ToIDispatch()
+		defer repetitionObj.Release()
+		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetDuration())
+		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetInterval())
+		oleutil.MustPutProperty(repetitionObj, "StopAtDurationEnd", trigger.GetStopAtDurationEnd())
+
+		oleutil.MustPutProperty(triggerObj, "StartBoundary", trigger.GetStartBoundary())
+
+		switch triggerType {
+		case TASK_TRIGGER_BOOT:
+			bootTrigger := trigger.(BootTrigger)
+			bootTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{2a9c35da-d357-41f4-bbc1-207ac1b1f3cb}"))
+			defer bootTriggerObj.Release()
+
+			oleutil.MustPutProperty(bootTriggerObj, "Delay", bootTrigger.Delay)
+		case TASK_TRIGGER_DAILY:
+			dailyTrigger := trigger.(DailyTrigger)
+			dailyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{126c5cd8-b288-41d5-8dbf-e491446adc5c}"))
+			defer dailyTriggerObj.Release()
+
+			oleutil.MustPutProperty(dailyTriggerObj, "DaysInterval", dailyTrigger.DaysInterval)
+			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", dailyTrigger.RandomDelay)
+		case TASK_TRIGGER_EVENT:
+			eventTrigger := trigger.(EventTrigger)
+			eventTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{d45b0167-9653-4eef-b94f-0732ca7af251}"))
+			defer eventTriggerObj.Release()
+
+			oleutil.MustPutProperty(eventTriggerObj, "Delay", eventTrigger.Delay)
+			oleutil.MustPutProperty(eventTriggerObj, "Subscription", eventTrigger.Subscription)
+			valueQueriesObj := oleutil.MustGetProperty(eventTriggerObj, "ValueQueries").ToIDispatch()
+			defer valueQueriesObj.Release()
+
+			for name, value := range eventTrigger.ValueQueries.ValueQueries {
+				oleutil.MustCallMethod(valueQueriesObj, "Create", name, value)
+			}
+		case TASK_TRIGGER_IDLE:
+			idleTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{d537d2b0-9fb3-4d34-9739-1ff5ce7b1ef3}"))
+			defer idleTriggerObj.Release()
+		case TASK_TRIGGER_LOGON:
+			logonTrigger := trigger.(LogonTrigger)
+			logonTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{72dade38-fae4-4b3e-baf4-5d009af02b1c}"))
+			defer logonTriggerObj.Release()
+
+			oleutil.MustPutProperty(logonTriggerObj, "Delay", logonTrigger.Delay)
+			oleutil.MustPutProperty(logonTriggerObj, "UserId", logonTrigger.UserID)
+		case TASK_TRIGGER_MONTHLYDOW:
+			monthlyDOWTrigger := trigger.(MonthlyDOWTrigger)
+			monthlyDOWTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{77d025a3-90fa-43aa-b52e-cda5499b946a}"))
+			defer monthlyDOWTriggerObj.Release()
+
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "DaysOfWeek", monthlyDOWTrigger.DaysOfWeek)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "MonthsOfYear", monthlyDOWTrigger.MonthsOfYear)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", monthlyDOWTrigger.RandomDelay)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RunOnLastWeekOfMonth", monthlyDOWTrigger.RunOnLastWeekOfMonth)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "WeeksOfMonth", monthlyDOWTrigger.WeeksOfMonth)
+		case TASK_TRIGGER_MONTHLY:
+			monthlyTrigger := trigger.(MonthlyTrigger)
+			monthlyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{97c45ef1-6b02-4a1a-9c0e-1ebfba1500ac}"))
+			defer monthlyTriggerObj.Release()
+
+			oleutil.MustPutProperty(monthlyTriggerObj, "DaysOfMonth", monthlyTrigger.DaysOfMonth)
+			oleutil.MustPutProperty(monthlyTriggerObj, "MonthsOfYear", monthlyTrigger.MonthsOfYear)
+			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", monthlyTrigger.RandomDelay)
+			oleutil.MustPutProperty(monthlyTriggerObj, "RunOnLastDayOfMonth", monthlyTrigger.RunOnLastWeekOfMonth)
+		case TASK_TRIGGER_REGISTRATION:
+			registrationTrigger := trigger.(RegistrationTrigger)
+			registrationTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{4c8fec3a-c218-4e0c-b23d-629024db91a2}"))
+			defer registrationTriggerObj.Release()
+
+			oleutil.MustPutProperty(registrationTriggerObj, "Delay", registrationTrigger.Delay)
+		case TASK_TRIGGER_TIME:
+			timeTrigger := trigger.(TimeTrigger)
+			timeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{b45747e0-eba7-4276-9f29-85c5bb300006}"))
+			defer timeTriggerObj.Release()
+
+			oleutil.MustPutProperty(timeTriggerObj, "RandomDelay", timeTrigger.RandomDelay)
+		case TASK_TRIGGER_WEEKLY:
+			weeklyTrigger := trigger.(WeeklyTrigger)
+			weeklyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{5038fc98-82ff-436d-8728-a512a57c9dc1}"))
+			defer weeklyTriggerObj.Release()
+
+			oleutil.MustPutProperty(weeklyTriggerObj, "DaysOfWeek", weeklyTrigger.DaysOfWeek)
+			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", weeklyTrigger.RandomDelay)
+			oleutil.MustPutProperty(weeklyTriggerObj, "WeeksInterval", weeklyTrigger.WeeksInterval)
+		case TASK_TRIGGER_SESSION_STATE_CHANGE:
+			sessionStateChangeTrigger := trigger.(SessionStateChangeTrigger)
+			sessionStateChangeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{754da71b-4385-4475-9dd9-598294fa3641}"))
+			defer sessionStateChangeTriggerObj.Release()
+
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", sessionStateChangeTrigger.Delay)
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "StateChange", sessionStateChangeTrigger.StateChange)
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "UserId", sessionStateChangeTrigger.UserId)
+			// need to find GUID
+			/*case TASK_TRIGGER_CUSTOM_TRIGGER_01:
+			return nil*/
+		}
+	}
+
+	return nil
+}
+
+func checkTriggerType(triggerType int) bool {
+	switch triggerType {
+	case TASK_TRIGGER_BOOT:
+		fallthrough
+	case TASK_TRIGGER_DAILY:
+		fallthrough
+	case TASK_TRIGGER_EVENT:
+		fallthrough
+	case TASK_TRIGGER_IDLE:
+		fallthrough
+	case TASK_TRIGGER_LOGON:
+		fallthrough
+	case TASK_TRIGGER_MONTHLYDOW:
+		fallthrough
+	case TASK_TRIGGER_MONTHLY:
+		fallthrough
+	case TASK_TRIGGER_REGISTRATION:
+		fallthrough
+	case TASK_TRIGGER_TIME:
+		fallthrough
+	case TASK_TRIGGER_WEEKLY:
+		fallthrough
+	case TASK_TRIGGER_SESSION_STATE_CHANGE:
+		return true
+		// need to find GUID
+		/*case TASK_TRIGGER_CUSTOM_TRIGGER_01:
+		return nil*/
+	default:
+		return false
 	}
 }
 

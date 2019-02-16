@@ -142,12 +142,17 @@ type Definition struct {
 }
 
 type Action interface {
+	GetID() string
 	GetType() int
 }
 
-type TaskAction struct {
-	ID   string
+type TypeHolder struct {
 	Type int
+}
+
+type TaskAction struct {
+	ID string
+	TypeHolder
 }
 
 type ExecAction struct {
@@ -202,17 +207,17 @@ type RegistrationInfo struct {
 }
 
 type TaskSettings struct {
-	AllowDemandStart         bool
-	AllowHardTerminate       bool
-	Compatibility            int
-	DeleteExpiredTaskAfter   string
-	DontStartOnBatteries     bool
-	Enabled                  bool
-	TimeLimit                string
-	Hidden                   bool
-	IdleSettings             IdleSettings
-	MultipleInstances        int
-	NetworkSettings          NetworkSettings
+	AllowDemandStart       bool
+	AllowHardTerminate     bool
+	Compatibility          int
+	DeleteExpiredTaskAfter string
+	DontStartOnBatteries   bool
+	Enabled                bool
+	TimeLimit              string
+	Hidden                 bool
+	IdleSettings
+	MultipleInstances int
+	NetworkSettings
 	Priority                 int
 	RestartCount             int
 	RestartInterval          string
@@ -236,6 +241,14 @@ type NetworkSettings struct {
 }
 
 type Trigger interface {
+	GetDuration() string
+	GetEnabled() bool
+	GetEndBoundary() string
+	GetExecutionTimeLimit() string
+	GetID() string
+	GetInterval() string
+	GetStartBoundary() string
+	GetStopAtDurationEnd() bool
 	GetType() int
 }
 
@@ -244,9 +257,9 @@ type TaskTrigger struct {
 	EndBoundary        string
 	ExecutionTimeLimit string
 	ID                 string
-	Repetition         RepetitionPattern
-	StartBoundary      string
-	Type               int
+	RepetitionPattern
+	StartBoundary string
+	TypeHolder
 }
 
 type RepetitionPattern struct {
@@ -293,7 +306,7 @@ type MonthlyDOWTrigger struct {
 	DaysOfWeek           int
 	MonthsOfYear         int
 	RandomDelay          string
-	RunOnLastWeekOnMonth bool
+	RunOnLastWeekOfMonth bool
 	WeeksOfMonth         int
 }
 
@@ -302,7 +315,7 @@ type MonthlyTrigger struct {
 	DaysOfMonth          int
 	MonthsOfYear         int
 	RandomDelay          string
-	RunOnLastWeekOnMonth bool
+	RunOnLastWeekOfMonth bool
 }
 
 type RegistrationTrigger struct {
@@ -333,66 +346,42 @@ type CustomTrigger struct {
 	TaskTrigger
 }
 
-func (e ExecAction) GetType() int {
-	return e.Type
+func (a TaskAction) GetID() string {
+	return a.ID
 }
 
-func (c ComHandlerAction) GetType() int {
-	return c.Type
+func (t TypeHolder) GetType() int {
+	return t.Type
 }
 
-func (e EmailAction) GetType() int {
-	return e.Type
+func (t TaskTrigger) GetDuration() string {
+	return t.Duration
 }
 
-func (m MessageAction) GetType() int {
-	return m.Type
+func (t TaskTrigger) GetEnabled() bool {
+	return t.Enabled
 }
 
-func (b BootTrigger) GetType() int {
-	return b.TaskTrigger.Type
+func (t TaskTrigger) GetEndBoundary() string {
+	return t.EndBoundary
 }
 
-func (d DailyTrigger) GetType() int {
-	return d.TaskTrigger.Type
+func (t TaskTrigger) GetExecutionTimeLimit() string {
+	return t.ExecutionTimeLimit
 }
 
-func (e EventTrigger) GetType() int {
-	return e.TaskTrigger.Type
+func (t TaskTrigger) GetID() string {
+	return t.ID
 }
 
-func (i IdleTrigger) GetType() int {
-	return i.TaskTrigger.Type
+func (t TaskTrigger) GetInterval() string {
+	return t.Interval
 }
 
-func (l LogonTrigger) GetType() int {
-	return l.TaskTrigger.Type
+func (t TaskTrigger) GetStartBoundary() string {
+	return t.StartBoundary
 }
 
-func (m MonthlyDOWTrigger) GetType() int {
-	return m.TaskTrigger.Type
-}
-
-func (m MonthlyTrigger) GetType() int {
-	return m.TaskTrigger.Type
-}
-
-func (r RegistrationTrigger) GetType() int {
-	return r.TaskTrigger.Type
-}
-
-func (t TimeTrigger) GetType() int {
-	return t.TaskTrigger.Type
-}
-
-func (w WeeklyTrigger) GetType() int {
-	return w.TaskTrigger.Type
-}
-
-func (s SessionStateChangeTrigger) GetType() int {
-	return s.TaskTrigger.Type
-}
-
-func (c CustomTrigger) GetType() int {
-	return c.TaskTrigger.Type
+func (t TaskTrigger) GetStopAtDurationEnd() bool {
+	return t.StopAtDurationEnd
 }
