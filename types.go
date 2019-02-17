@@ -6,6 +6,65 @@ import (
 	"github.com/go-ole/go-ole"
 )
 
+type Day int
+
+const (
+	Sunday    Day = 0x01
+	Monday    Day = 0x02
+	Tuesday   Day = 0x04
+	Wednesday Day = 0x08
+	Thursday  Day = 0x10
+	Friday    Day = 0x20
+	Saturday  Day = 0x40
+)
+
+type DayInterval int
+
+const (
+	EveryDay      DayInterval = 1
+	EveryOtherDay DayInterval = 2
+)
+
+type DayOfMonth int
+
+const (
+	LastDayOfMonth = 32
+)
+
+type Month int
+
+const (
+	January   Month = 0x01
+	February  Month = 0x02
+	March     Month = 0x04
+	April     Month = 0x08
+	May       Month = 0x10
+	June      Month = 0x20
+	July      Month = 0x40
+	August    Month = 0x80
+	September Month = 0x100
+	October   Month = 0x200
+	November  Month = 0x400
+	December  Month = 0x800
+)
+
+type Week int
+
+const (
+	First  Week = 0x01
+	Second Week = 0x02
+	Third  Week = 0x04
+	Fourth Week = 0x08
+	Last   Week = 0x10
+)
+
+type WeekInterval int
+
+const (
+	EveryWeek      WeekInterval = 1
+	EveryOtherWeek WeekInterval = 2
+)
+
 type TaskActionType int
 
 const (
@@ -319,8 +378,8 @@ type BootTrigger struct {
 
 type DailyTrigger struct {
 	TaskTrigger
-	DaysInterval int
-	RandomDelay  string
+	DayInterval DayInterval
+	RandomDelay string
 }
 
 type EventTrigger struct {
@@ -342,17 +401,17 @@ type LogonTrigger struct {
 
 type MonthlyDOWTrigger struct {
 	TaskTrigger
-	DaysOfWeek           int
-	MonthsOfYear         int
+	DayOfWeek            Day
+	MonthOfYear          Month
 	RandomDelay          string
 	RunOnLastWeekOfMonth bool
-	WeeksOfMonth         int
+	WeekOfMonth          Week
 }
 
 type MonthlyTrigger struct {
 	TaskTrigger
-	DaysOfMonth          int
-	MonthsOfYear         int
+	DayOfMonth           DayOfMonth
+	MonthOfYear          Month
 	RandomDelay          string
 	RunOnLastWeekOfMonth bool
 }
@@ -376,9 +435,9 @@ type TimeTrigger struct {
 
 type WeeklyTrigger struct {
 	TaskTrigger
-	DaysOfWeek    int
-	RandomDelay   string
-	WeeksInterval int
+	DayOfWeek    Day
+	RandomDelay  string
+	WeekInterval WeekInterval
 }
 
 type CustomTrigger struct {
@@ -496,13 +555,13 @@ func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary
 	})
 }
 
-func (d *Definition) AddDailyTrigger(daysInterval int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, DailyTrigger{
-		DaysInterval: daysInterval,
-		RandomDelay:  randomDelay,
+		DayInterval: dayInterval,
+		RandomDelay: randomDelay,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,
@@ -595,16 +654,16 @@ func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, en
 	})
 }
 
-func (d *Definition) AddMonthlyDOWTrigger(daysOfWeek, weeksOfMonth, monthsOfYear int, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, MonthlyDOWTrigger{
-		DaysOfWeek:           daysOfWeek,
-		MonthsOfYear:         monthsOfYear,
+		DayOfWeek:            dayOfWeek,
+		MonthOfYear:          monthOfYear,
 		RandomDelay:          randomDelay,
 		RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
-		WeeksOfMonth:         weeksOfMonth,
+		WeekOfMonth:          weekOfMonth,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,
@@ -623,14 +682,18 @@ func (d *Definition) AddMonthlyDOWTrigger(daysOfWeek, weeksOfMonth, monthsOfYear
 	})
 }
 
-func (d *Definition) AddMonthlyTrigger(daysOfMonth, monthsOfYear int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) error {
+	monthDay, err := IntToDayOfMonth(dayOfMonth)
+	if err != nil {
+		return err
+	}
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, MonthlyTrigger{
-		DaysOfMonth:  daysOfMonth,
-		MonthsOfYear: monthsOfYear,
-		RandomDelay:  randomDelay,
+		DayOfMonth:  monthDay,
+		MonthOfYear: monthOfYear,
+		RandomDelay: randomDelay,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,
@@ -647,6 +710,8 @@ func (d *Definition) AddMonthlyTrigger(daysOfMonth, monthsOfYear int, randomDela
 			},
 		},
 	})
+
+	return nil
 }
 
 func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
@@ -723,14 +788,14 @@ func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBo
 	})
 }
 
-func (d *Definition) AddWeeklyTrigger(daysOfWeek, weeksInterval int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, WeeklyTrigger{
-		DaysOfWeek:    daysOfWeek,
-		RandomDelay:   randomDelay,
-		WeeksInterval: weeksInterval,
+		DayOfWeek:    dayOfWeek,
+		RandomDelay:  randomDelay,
+		WeekInterval: weekInterval,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,

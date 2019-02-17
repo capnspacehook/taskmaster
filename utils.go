@@ -3,10 +3,20 @@ package taskmaster
 import (
 	//"strconv"
 	//"strings"
+	"errors"
+	"math"
 	"time"
 )
 
 var taskDateFormat = "2006-01-02T15:04:05.0000000"
+
+func IntToDayOfMonth(dayOfMonth int) (DayOfMonth, error) {
+	if dayOfMonth < 1 || dayOfMonth > 32 {
+		return 0, errors.New("invalid day of month")
+	}
+
+	return DayOfMonth(math.Exp2(float64(dayOfMonth - 1))), nil
+}
 
 func TimeToTaskDate(t time.Time) string {
 	defaultTime := time.Time{}

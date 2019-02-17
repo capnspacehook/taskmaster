@@ -514,13 +514,13 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return bootTrigger, nil
 	case TASK_TRIGGER_DAILY:
-		daysInterval := int(oleutil.MustGetProperty(trigger, "DaysInterval").Val)
+		daysInterval := DayInterval(oleutil.MustGetProperty(trigger, "DaysInterval").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
 
 		dailyTrigger := DailyTrigger{
-			TaskTrigger:  taskTriggerObj,
-			DaysInterval: daysInterval,
-			RandomDelay:  randomDelay,
+			TaskTrigger: taskTriggerObj,
+			DayInterval: daysInterval,
+			RandomDelay: randomDelay,
 		}
 
 		return dailyTrigger, nil
@@ -572,32 +572,32 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return logonTrigger, nil
 	case TASK_TRIGGER_MONTHLYDOW:
-		daysOfWeek := int(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
-		monthsOfYear := int(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
+		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
+		monthsOfYear := Month(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
 		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOfMonth").Value().(bool)
-		weeksOfMonth := int(oleutil.MustGetProperty(trigger, "WeeksOfMonth").Val)
+		weeksOfMonth := Week(oleutil.MustGetProperty(trigger, "WeeksOfMonth").Val)
 
 		monthlyDOWTrigger := MonthlyDOWTrigger{
 			TaskTrigger:          taskTriggerObj,
-			DaysOfWeek:           daysOfWeek,
-			MonthsOfYear:         monthsOfYear,
+			DayOfWeek:            daysOfWeek,
+			MonthOfYear:          monthsOfYear,
 			RandomDelay:          randomDelay,
 			RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
-			WeeksOfMonth:         weeksOfMonth,
+			WeekOfMonth:          weeksOfMonth,
 		}
 
 		return monthlyDOWTrigger, nil
 	case TASK_TRIGGER_MONTHLY:
-		daysOfMonth := int(oleutil.MustGetProperty(trigger, "DaysOfMonth").Val)
-		monthsOfYear := int(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
+		daysOfMonth := DayOfMonth(oleutil.MustGetProperty(trigger, "DaysOfMonth").Val)
+		monthsOfYear := Month(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
 		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastDayOfMonth").Value().(bool)
 
 		monthlyTrigger := MonthlyTrigger{
 			TaskTrigger:          taskTriggerObj,
-			DaysOfMonth:          daysOfMonth,
-			MonthsOfYear:         monthsOfYear,
+			DayOfMonth:           daysOfMonth,
+			MonthOfYear:          monthsOfYear,
 			RandomDelay:          randomDelay,
 			RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
 		}
@@ -622,15 +622,15 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return timetrigger, nil
 	case TASK_TRIGGER_WEEKLY:
-		daysOfWeek := int(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
+		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
 		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
-		weeksInterval := int(oleutil.MustGetProperty(trigger, "WeeksInterval").Val)
+		weeksInterval := WeekInterval(oleutil.MustGetProperty(trigger, "WeeksInterval").Val)
 
 		weeklyTrigger := WeeklyTrigger{
-			TaskTrigger:   taskTriggerObj,
-			DaysOfWeek:    daysOfWeek,
-			RandomDelay:   randomDelay,
-			WeeksInterval: weeksInterval,
+			TaskTrigger:  taskTriggerObj,
+			DayOfWeek:    daysOfWeek,
+			RandomDelay:  randomDelay,
+			WeekInterval: weeksInterval,
 		}
 
 		return weeklyTrigger, nil
@@ -1007,7 +1007,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			dailyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{126c5cd8-b288-41d5-8dbf-e491446adc5c}"))
 			defer dailyTriggerObj.Release()
 
-			oleutil.MustPutProperty(dailyTriggerObj, "DaysInterval", dailyTrigger.DaysInterval)
+			oleutil.MustPutProperty(dailyTriggerObj, "DaysInterval", int(dailyTrigger.DayInterval))
 			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", dailyTrigger.RandomDelay)
 		case TASK_TRIGGER_EVENT:
 			eventTrigger := trigger.(EventTrigger)
@@ -1037,18 +1037,18 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			monthlyDOWTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{77d025a3-90fa-43aa-b52e-cda5499b946a}"))
 			defer monthlyDOWTriggerObj.Release()
 
-			oleutil.MustPutProperty(monthlyDOWTriggerObj, "DaysOfWeek", monthlyDOWTrigger.DaysOfWeek)
-			oleutil.MustPutProperty(monthlyDOWTriggerObj, "MonthsOfYear", monthlyDOWTrigger.MonthsOfYear)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "DaysOfWeek", int(monthlyDOWTrigger.DayOfWeek))
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "MonthsOfYear", int(monthlyDOWTrigger.MonthOfYear))
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", monthlyDOWTrigger.RandomDelay)
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RunOnLastWeekOfMonth", monthlyDOWTrigger.RunOnLastWeekOfMonth)
-			oleutil.MustPutProperty(monthlyDOWTriggerObj, "WeeksOfMonth", monthlyDOWTrigger.WeeksOfMonth)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "WeeksOfMonth", int(monthlyDOWTrigger.WeekOfMonth))
 		case TASK_TRIGGER_MONTHLY:
 			monthlyTrigger := trigger.(MonthlyTrigger)
 			monthlyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{97c45ef1-6b02-4a1a-9c0e-1ebfba1500ac}"))
 			defer monthlyTriggerObj.Release()
 
-			oleutil.MustPutProperty(monthlyTriggerObj, "DaysOfMonth", monthlyTrigger.DaysOfMonth)
-			oleutil.MustPutProperty(monthlyTriggerObj, "MonthsOfYear", monthlyTrigger.MonthsOfYear)
+			oleutil.MustPutProperty(monthlyTriggerObj, "DaysOfMonth", int(monthlyTrigger.DayOfMonth))
+			oleutil.MustPutProperty(monthlyTriggerObj, "MonthsOfYear", int(monthlyTrigger.MonthOfYear))
 			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", monthlyTrigger.RandomDelay)
 			oleutil.MustPutProperty(monthlyTriggerObj, "RunOnLastDayOfMonth", monthlyTrigger.RunOnLastWeekOfMonth)
 		case TASK_TRIGGER_REGISTRATION:
@@ -1068,9 +1068,9 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			weeklyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{5038fc98-82ff-436d-8728-a512a57c9dc1}"))
 			defer weeklyTriggerObj.Release()
 
-			oleutil.MustPutProperty(weeklyTriggerObj, "DaysOfWeek", weeklyTrigger.DaysOfWeek)
+			oleutil.MustPutProperty(weeklyTriggerObj, "DaysOfWeek", int(weeklyTrigger.DayOfWeek))
 			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", weeklyTrigger.RandomDelay)
-			oleutil.MustPutProperty(weeklyTriggerObj, "WeeksInterval", weeklyTrigger.WeeksInterval)
+			oleutil.MustPutProperty(weeklyTriggerObj, "WeeksInterval", int(weeklyTrigger.WeekInterval))
 		case TASK_TRIGGER_SESSION_STATE_CHANGE:
 			sessionStateChangeTrigger := trigger.(SessionStateChangeTrigger)
 			sessionStateChangeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{754da71b-4385-4475-9dd9-598294fa3641}"))
