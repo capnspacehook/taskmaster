@@ -6,48 +6,19 @@ import (
 	"github.com/go-ole/go-ole"
 )
 
-const (
-	TASK_VALIDATE_ONLY                = 1
-	TASK_CREATE                       = 2
-	TASK_UPDATE                       = 4
-	TASK_CREATE_OR_UPDATE             = 6
-	TASK_DISABLE                      = 8
-	TASK_DONT_ADD_PRINCIPAL_ACE       = 0x10
-	TASK_IGNORE_REGISTRATION_TRIGGERS = 0x20
-)
+type TaskActionType int
 
 const (
-	TASK_STATE_UNKNOWN = iota
-	TASK_STATE_DISABLED
-	TASK_STATE_QUEUED
-	TASK_STATE_READY
-	TASK_STATE_RUNNING
+	TASK_ACTION_EXEC         TaskActionType = 0
+	TASK_ACTION_COM_HANDLER  TaskActionType = 5
+	TASK_ACTION_SEND_EMAIL   TaskActionType = 6
+	TASK_ACTION_SHOW_MESSAGE TaskActionType = 7
 )
 
-const (
-	TASK_RUNLEVEL_LUA = iota
-	TASK_RUNLEVEL_HIGHEST
-)
+type TaskCompatibility int
 
 const (
-	TASK_ACTION_EXEC         = 0
-	TASK_ACTION_COM_HANDLER  = 5
-	TASK_ACTION_SEND_EMAIL   = 6
-	TASK_ACTION_SHOW_MESSAGE = 7
-)
-
-const (
-	TASK_LOGON_NONE = iota
-	TASK_LOGON_PASSWORD
-	TASK_LOGON_S4U
-	TASK_LOGON_INTERACTIVE_TOKEN
-	TASK_LOGON_GROUP
-	TASK_LOGON_SERVICE_ACCOUNT
-	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD
-)
-
-const (
-	TASK_COMPATIBILITY_AT = iota
+	TASK_COMPATIBILITY_AT TaskCompatibility = iota
 	TASK_COMPATIBILITY_V1
 	TASK_COMPATIBILITY_V2
 	TASK_COMPATIBILITY_V2_1
@@ -56,30 +27,66 @@ const (
 	TASK_COMPATIBILITY_V2_4
 )
 
+type TaskCreationFlags int
+
 const (
-	TASK_INSTANCES_PARALLEL = iota
+	TASK_VALIDATE_ONLY                TaskCreationFlags = 1
+	TASK_CREATE                       TaskCreationFlags = 2
+	TASK_UPDATE                       TaskCreationFlags = 4
+	TASK_CREATE_OR_UPDATE             TaskCreationFlags = 6
+	TASK_DISABLE                      TaskCreationFlags = 8
+	TASK_DONT_ADD_PRINCIPAL_ACE       TaskCreationFlags = 0x10
+	TASK_IGNORE_REGISTRATION_TRIGGERS TaskCreationFlags = 0x20
+)
+
+type TaskEnumFlags int
+
+const (
+	TASK_ENUM_HIDDEN TaskEnumFlags = 1
+)
+
+type TaskInstancesPolicy int
+
+const (
+	TASK_INSTANCES_PARALLEL TaskInstancesPolicy = iota
 	TASK_INSTANCES_QUEUE
 	TASK_INSTANCES_IGNORE_NEW
 	TASK_INSTANCES_STOP_EXISTING
 )
 
-const (
-	TASK_TRIGGER_EVENT                = 0
-	TASK_TRIGGER_TIME                 = 1
-	TASK_TRIGGER_DAILY                = 2
-	TASK_TRIGGER_WEEKLY               = 3
-	TASK_TRIGGER_MONTHLY              = 4
-	TASK_TRIGGER_MONTHLYDOW           = 5
-	TASK_TRIGGER_IDLE                 = 6
-	TASK_TRIGGER_REGISTRATION         = 7
-	TASK_TRIGGER_BOOT                 = 8
-	TASK_TRIGGER_LOGON                = 9
-	TASK_TRIGGER_SESSION_STATE_CHANGE = 11
-	TASK_TRIGGER_CUSTOM_TRIGGER_01    = 12
-)
+type TaskLogonType int
 
 const (
-	TASK_CONSOLE_CONNECT = iota
+	TASK_LOGON_NONE TaskLogonType = iota
+	TASK_LOGON_PASSWORD
+	TASK_LOGON_S4U
+	TASK_LOGON_INTERACTIVE_TOKEN
+	TASK_LOGON_GROUP
+	TASK_LOGON_SERVICE_ACCOUNT
+	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD
+)
+
+type TaskRunFlags int
+
+const (
+	TASK_RUN_NO_FLAGS           TaskRunFlags = 0
+	TASK_RUN_AS_SELF            TaskRunFlags = 1
+	TASK_RUN_IGNORE_CONSTRAINTS TaskRunFlags = 2
+	TASK_RUN_USE_SESSION_ID     TaskRunFlags = 4
+	TASK_RUN_USER_SID           TaskRunFlags = 8
+)
+
+type TaskRunLevel int
+
+const (
+	TASK_RUNLEVEL_LUA TaskRunLevel = iota
+	TASK_RUNLEVEL_HIGHEST
+)
+
+type TaskSessionStateChangeType int
+
+const (
+	TASK_CONSOLE_CONNECT TaskSessionStateChangeType = iota
 	TASK_CONSOLE_DISCONNECT
 	TASK_REMOTE_CONNECT
 	TASK_REMOTE_DISCONNECT
@@ -87,10 +94,40 @@ const (
 	TASK_SESSION_UNLOCK
 )
 
+type TaskState int
+
+const (
+	TASK_STATE_UNKNOWN TaskState = iota
+	TASK_STATE_DISABLED
+	TASK_STATE_QUEUED
+	TASK_STATE_READY
+	TASK_STATE_RUNNING
+)
+
+type TaskTriggerType int
+
+const (
+	TASK_TRIGGER_EVENT                TaskTriggerType = 0
+	TASK_TRIGGER_TIME                 TaskTriggerType = 1
+	TASK_TRIGGER_DAILY                TaskTriggerType = 2
+	TASK_TRIGGER_WEEKLY               TaskTriggerType = 3
+	TASK_TRIGGER_MONTHLY              TaskTriggerType = 4
+	TASK_TRIGGER_MONTHLYDOW           TaskTriggerType = 5
+	TASK_TRIGGER_IDLE                 TaskTriggerType = 6
+	TASK_TRIGGER_REGISTRATION         TaskTriggerType = 7
+	TASK_TRIGGER_BOOT                 TaskTriggerType = 8
+	TASK_TRIGGER_LOGON                TaskTriggerType = 9
+	TASK_TRIGGER_SESSION_STATE_CHANGE TaskTriggerType = 11
+	TASK_TRIGGER_CUSTOM_TRIGGER_01    TaskTriggerType = 12
+)
+
 type TaskService struct {
-	taskServiceObj *ole.IDispatch
-	isInitialized  bool
-	isConnected    bool
+	taskServiceObj        *ole.IDispatch
+	isInitialized         bool
+	isConnected           bool
+	connectedDomain       string
+	connectedComputerName string
+	connectedUser         string
 
 	RootFolder      RootFolder
 	RunningTasks    []*RunningTask
@@ -116,7 +153,7 @@ type RunningTask struct {
 	InstanceGUID  string
 	Name          string
 	Path          string
-	State         int
+	State         TaskState
 }
 
 type RegisteredTask struct {
@@ -125,7 +162,7 @@ type RegisteredTask struct {
 	Path           string
 	Definition     Definition
 	Enabled        bool
-	State          int
+	State          TaskState
 	MissedRuns     int
 	NextRunTime    time.Time
 	LastRunTime    time.Time
@@ -145,16 +182,16 @@ type Definition struct {
 
 type Action interface {
 	GetID() string
-	GetType() int
+	GetType() TaskActionType
 }
 
-type TypeHolder struct {
-	Type int
+type TaskActionTypeHolder struct {
+	Type TaskActionType
 }
 
 type TaskAction struct {
 	ID string
-	TypeHolder
+	TaskActionTypeHolder
 }
 
 type ExecAction struct {
@@ -192,8 +229,8 @@ type Principal struct {
 	Name      string
 	GroupID   string
 	ID        string
-	LogonType int
-	RunLevel  int
+	LogonType TaskLogonType
+	RunLevel  TaskRunLevel
 	UserID    string
 }
 
@@ -211,14 +248,14 @@ type RegistrationInfo struct {
 type TaskSettings struct {
 	AllowDemandStart       bool
 	AllowHardTerminate     bool
-	Compatibility          int
+	Compatibility          TaskCompatibility
 	DeleteExpiredTaskAfter string
 	DontStartOnBatteries   bool
 	Enabled                bool
 	TimeLimit              string
 	Hidden                 bool
 	IdleSettings
-	MultipleInstances int
+	MultipleInstances TaskInstancesPolicy
 	NetworkSettings
 	Priority                 int
 	RestartCount             int
@@ -251,7 +288,11 @@ type Trigger interface {
 	GetRepitionInterval() string
 	GetStartBoundary() string
 	GetStopAtDurationEnd() bool
-	GetType() int
+	GetType() TaskTriggerType
+}
+
+type TaskTriggerTypeHolder struct {
+	Type TaskTriggerType
 }
 
 type TaskTrigger struct {
@@ -261,7 +302,7 @@ type TaskTrigger struct {
 	ID                 string
 	RepetitionPattern
 	StartBoundary string
-	TypeHolder
+	TaskTriggerTypeHolder
 }
 
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
@@ -324,7 +365,7 @@ type RegistrationTrigger struct {
 type SessionStateChangeTrigger struct {
 	TaskTrigger
 	Delay       string
-	StateChange int
+	StateChange TaskSessionStateChangeType
 	UserId      string
 }
 
@@ -344,11 +385,31 @@ type CustomTrigger struct {
 	TaskTrigger
 }
 
+func (t TaskService) IsConnected() bool {
+	return t.isConnected
+}
+
+func (t TaskService) GetConnectedDomain() string {
+	return t.connectedDomain
+}
+
+func (t TaskService) GetConnectedComputerName() string {
+	return t.connectedComputerName
+}
+
+func (t TaskService) GetConnectedUser() string {
+	return t.connectedUser
+}
+
 func (a TaskAction) GetID() string {
 	return a.ID
 }
 
-func (t TypeHolder) GetType() int {
+func (t TaskActionTypeHolder) GetType() TaskActionType {
+	return t.Type
+}
+
+func (t TaskTriggerTypeHolder) GetType() TaskTriggerType {
 	return t.Type
 }
 
@@ -391,7 +452,7 @@ func (d *Definition) AddExecAction(path, args, workingDir, id string) {
 		WorkingDir: workingDir,
 		TaskAction: TaskAction{
 			ID: id,
-			TypeHolder: TypeHolder{
+			TaskActionTypeHolder: TaskActionTypeHolder{
 				Type: TASK_ACTION_EXEC,
 			},
 		},
@@ -404,7 +465,7 @@ func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 		Data:    data,
 		TaskAction: TaskAction{
 			ID: id,
-			TypeHolder: TypeHolder{
+			TaskActionTypeHolder: TaskActionTypeHolder{
 				Type: TASK_ACTION_COM_HANDLER,
 			},
 		},
@@ -428,7 +489,7 @@ func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_BOOT,
 			},
 		},
@@ -453,7 +514,7 @@ func (d *Definition) AddDailyTrigger(daysInterval int, randomDelay, id string, s
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_DAILY,
 			},
 		},
@@ -479,7 +540,7 @@ func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries ma
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_EVENT,
 			},
 		},
@@ -502,7 +563,7 @@ func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.T
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_IDLE,
 			},
 		},
@@ -527,7 +588,7 @@ func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, en
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_LOGON,
 			},
 		},
@@ -555,7 +616,7 @@ func (d *Definition) AddMonthlyDOWTrigger(daysOfWeek, weeksOfMonth, monthsOfYear
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_MONTHLYDOW,
 			},
 		},
@@ -581,7 +642,7 @@ func (d *Definition) AddMonthlyTrigger(daysOfMonth, monthsOfYear int, randomDela
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_MONTHLY,
 			},
 		},
@@ -605,14 +666,14 @@ func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, end
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_REGISTRATION,
 			},
 		},
 	})
 }
 
-func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange int, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange TaskSessionStateChangeType, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -631,7 +692,7 @@ func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange int
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_SESSION_STATE_CHANGE,
 			},
 		},
@@ -655,7 +716,7 @@ func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBo
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_TIME,
 			},
 		},
@@ -681,7 +742,7 @@ func (d *Definition) AddWeeklyTrigger(daysOfWeek, weeksInterval int, randomDelay
 				StopAtDurationEnd: stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
-			TypeHolder: TypeHolder{
+			TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 				Type: TASK_TRIGGER_WEEKLY,
 			},
 		},

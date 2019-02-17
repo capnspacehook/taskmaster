@@ -9,10 +9,6 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 )
 
-const (
-	TASK_ENUM_HIDDEN = 1
-)
-
 func (t *TaskService) initialize() error {
 	var err error
 
@@ -41,9 +37,12 @@ func (t *TaskService) initialize() error {
 	return nil
 }
 
-// Connect connects to the local Task Scheduler service. This function
-// has to be run before any other functions in taskmaster can be used
-func (t *TaskService) Connect() error {
+// Connect connects to a local or remote Task Scheduler service. This function
+// has to be run before any other functions in taskmaster can be used. If  the
+// serverName parameter is empty, a connection to the local Task Scheduler service
+// will be attempted. If the user and password parameters are empty, the current
+// token will be used for authentication
+func (t *TaskService) Connect(serverName, domain, user, password string) error {
 	if !t.isInitialized {
 		err := t.initialize()
 		if err != nil {
@@ -51,7 +50,7 @@ func (t *TaskService) Connect() error {
 		}
 	}
 
-	_, err := oleutil.CallMethod(t.taskServiceObj, "Connect")
+	_, err := oleutil.CallMethod(t.taskServiceObj, "Connect", serverName, user, domain, password)
 	if err != nil {
 		return err
 	}
@@ -207,7 +206,7 @@ func parseRunningTask(task *ole.IDispatch) RunningTask {
 	instanceGUID := oleutil.MustGetProperty(task, "InstanceGuid").ToString()
 	name := oleutil.MustGetProperty(task, "Name").ToString()
 	path := oleutil.MustGetProperty(task, "Path").ToString()
-	state := int(oleutil.MustGetProperty(task, "State").Val)
+	state := TaskState(oleutil.MustGetProperty(task, "State").Val)
 
 	runningTask := RunningTask{
 		taskObj:       task,
@@ -228,7 +227,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 	name := oleutil.MustGetProperty(task, "Name").ToString()
 	path := oleutil.MustGetProperty(task, "Path").ToString()
 	enabled := oleutil.MustGetProperty(task, "Enabled").Value().(bool)
-	state := int(oleutil.MustGetProperty(task, "State").Val)
+	state := TaskState(oleutil.MustGetProperty(task, "State").Val)
 	missedRuns := int(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
 	nextRunTime := oleutil.MustGetProperty(task, "NextRunTime").Value().(time.Time)
 	lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
@@ -317,7 +316,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, error) {
 
 func parseTaskAction(action *ole.IDispatch) (Action, error) {
 	id := oleutil.MustGetProperty(action, "Id").ToString()
-	actionType := int(oleutil.MustGetProperty(action, "Type").Val)
+	actionType := TaskActionType(oleutil.MustGetProperty(action, "Type").Val)
 
 	switch actionType {
 	case TASK_ACTION_EXEC:
@@ -328,7 +327,7 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		execAction := ExecAction{
 			TaskAction: TaskAction{
 				ID: id,
-				TypeHolder: TypeHolder{
+				TaskActionTypeHolder: TaskActionTypeHolder{
 					Type: actionType,
 				},
 			},
@@ -345,7 +344,7 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		comHandlerAction := ComHandlerAction{
 			TaskAction: TaskAction{
 				ID: id,
-				TypeHolder: TypeHolder{
+				TaskActionTypeHolder: TaskActionTypeHolder{
 					Type: actionType,
 				},
 			},
@@ -363,8 +362,8 @@ func parsePrincipal(principleObj *ole.IDispatch) Principal {
 	name := oleutil.MustGetProperty(principleObj, "DisplayName").ToString()
 	groupID := oleutil.MustGetProperty(principleObj, "GroupId").ToString()
 	id := oleutil.MustGetProperty(principleObj, "Id").ToString()
-	logonType := int(oleutil.MustGetProperty(principleObj, "LogonType").Val)
-	runLevel := int(oleutil.MustGetProperty(principleObj, "RunLevel").Val)
+	logonType := TaskLogonType(oleutil.MustGetProperty(principleObj, "LogonType").Val)
+	runLevel := TaskRunLevel(oleutil.MustGetProperty(principleObj, "RunLevel").Val)
 	userID := oleutil.MustGetProperty(principleObj, "UserId").ToString()
 
 	principle := Principal{
@@ -406,7 +405,7 @@ func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
 func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	allowDemandStart := oleutil.MustGetProperty(settings, "AllowDemandStart").Value().(bool)
 	allowHardTerminate := oleutil.MustGetProperty(settings, "AllowHardTerminate").Value().(bool)
-	compatibility := int(oleutil.MustGetProperty(settings, "Compatibility").Val)
+	compatibility := TaskCompatibility(oleutil.MustGetProperty(settings, "Compatibility").Val)
 	deleteExpiredTaskAfter := oleutil.MustGetProperty(settings, "DeleteExpiredTaskAfter").ToString()
 	dontStartOnBatteries := oleutil.MustGetProperty(settings, "DisallowStartIfOnBatteries").Value().(bool)
 	enabled := oleutil.MustGetProperty(settings, "Enabled").Value().(bool)
@@ -420,7 +419,7 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	stopOnIdleEnd := oleutil.MustGetProperty(idleSettings, "StopOnIdleEnd").Value().(bool)
 	waitTimeOut := oleutil.MustGetProperty(idleSettings, "WaitTimeout").ToString()
 
-	multipleInstances := int(oleutil.MustGetProperty(settings, "MultipleInstances").Val)
+	multipleInstances := TaskInstancesPolicy(oleutil.MustGetProperty(settings, "MultipleInstances").Val)
 
 	networkSettings := oleutil.MustGetProperty(settings, "NetworkSettings").ToIDispatch()
 	defer networkSettings.Release()
@@ -486,7 +485,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	stopAtDurationEnd := oleutil.MustGetProperty(repetition, "StopAtDurationEnd").Value().(bool)
 
 	startBoundary := oleutil.MustGetProperty(trigger, "StartBoundary").ToString()
-	triggerType := int(oleutil.MustGetProperty(trigger, "Type").Val)
+	triggerType := TaskTriggerType(oleutil.MustGetProperty(trigger, "Type").Val)
 
 	taskTriggerObj := TaskTrigger{
 		Enabled:            enabled,
@@ -499,7 +498,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 			StopAtDurationEnd: stopAtDurationEnd,
 		},
 		StartBoundary: startBoundary,
-		TypeHolder: TypeHolder{
+		TaskTriggerTypeHolder: TaskTriggerTypeHolder{
 			Type: triggerType,
 		},
 	}
@@ -637,7 +636,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		return weeklyTrigger, nil
 	case TASK_TRIGGER_SESSION_STATE_CHANGE:
 		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
-		stateChange := int(oleutil.MustGetProperty(trigger, "StateChange").Val)
+		stateChange := TaskSessionStateChangeType(oleutil.MustGetProperty(trigger, "StateChange").Val)
 		userID := oleutil.MustGetProperty(trigger, "UserId").ToString()
 
 		sessionStateChangeTrigger := SessionStateChangeTrigger{
@@ -691,7 +690,7 @@ func NewTaskDefinition() Definition {
 	return newDef
 }
 
-func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType int, overwrite bool) (bool, error) {
+func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (bool, error) {
 	var err error
 
 	if path[0] != '\\' {
@@ -722,7 +721,7 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	return true, nil
 }
 
-func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType int) error {
+func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) error {
 	var err error
 
 	if path[0] != '\\' {
@@ -751,7 +750,7 @@ func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, p
 	return nil
 }
 
-func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType int, flags int) (*ole.IDispatch, error) {
+func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
 	var err error
 
 	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()
@@ -769,7 +768,7 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 		}
 	}
 
-	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, flags, username, password, logonType, "")
+	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, int(flags), username, password, int(logonType), "")
 	if err != nil {
 		return nil, err
 	}
@@ -879,7 +878,7 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 			return errors.New("invalid action type")
 		}
 
-		actionObj := oleutil.MustCallMethod(actionsObj, "Create", actionType).ToIDispatch()
+		actionObj := oleutil.MustCallMethod(actionsObj, "Create", int(actionType)).ToIDispatch()
 		actionObj.Release()
 		oleutil.MustPutProperty(actionObj, "Id", action.GetID())
 
@@ -905,7 +904,7 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 	return nil
 }
 
-func checkActionType(actionType int) bool {
+func checkActionType(actionType TaskActionType) bool {
 	switch actionType {
 	case TASK_ACTION_EXEC:
 		fallthrough
@@ -924,8 +923,8 @@ func fillPrincipalObj(principal Principal, principalObj *ole.IDispatch) {
 	oleutil.MustPutProperty(principalObj, "DisplayName", principal.Name)
 	oleutil.MustPutProperty(principalObj, "GroupId", principal.GroupID)
 	oleutil.MustPutProperty(principalObj, "Id", principal.ID)
-	oleutil.MustPutProperty(principalObj, "LogonType", principal.LogonType)
-	oleutil.MustPutProperty(principalObj, "RunLevel", principal.RunLevel)
+	oleutil.MustPutProperty(principalObj, "LogonType", int(principal.LogonType))
+	oleutil.MustPutProperty(principalObj, "RunLevel", int(principal.RunLevel))
 	oleutil.MustPutProperty(principalObj, "UserId", principal.UserID)
 }
 
@@ -943,7 +942,7 @@ func fillRegistrationInfoObj(regInfo RegistrationInfo, regInfoObj *ole.IDispatch
 func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(settingsObj, "AllowDemandStart", settings.AllowDemandStart)
 	oleutil.MustPutProperty(settingsObj, "AllowHardTerminate", settings.AllowHardTerminate)
-	oleutil.MustPutProperty(settingsObj, "Compatibility", settings.Compatibility)
+	oleutil.MustPutProperty(settingsObj, "Compatibility", int(settings.Compatibility))
 	oleutil.MustPutProperty(settingsObj, "DeleteExpiredTaskAfter", settings.DeleteExpiredTaskAfter)
 	oleutil.MustPutProperty(settingsObj, "DisallowStartIfOnBatteries", settings.DontStartOnBatteries)
 	oleutil.MustPutProperty(settingsObj, "Enabled", settings.Enabled)
@@ -957,7 +956,7 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(idlesettingsObj, "StopOnIdleEnd", settings.IdleSettings.StopOnIdleEnd)
 	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", settings.IdleSettings.WaitTimeout)
 
-	oleutil.MustPutProperty(settingsObj, "MultipleInstances", settings.MultipleInstances)
+	oleutil.MustPutProperty(settingsObj, "MultipleInstances", int(settings.MultipleInstances))
 
 	networksettingsObj := oleutil.MustGetProperty(settingsObj, "NetworkSettings").ToIDispatch()
 	defer networksettingsObj.Release()
@@ -980,7 +979,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 		if !checkTriggerType(triggerType) {
 			return errors.New("invalid trigger type")
 		}
-		triggerObj := oleutil.MustCallMethod(triggersObj, "Create", triggerType).ToIDispatch()
+		triggerObj := oleutil.MustCallMethod(triggersObj, "Create", int(triggerType)).ToIDispatch()
 		defer triggerObj.Release()
 
 		oleutil.MustPutProperty(triggerObj, "Enabled", trigger.GetEnabled())
@@ -1078,7 +1077,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			defer sessionStateChangeTriggerObj.Release()
 
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", sessionStateChangeTrigger.Delay)
-			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "StateChange", sessionStateChangeTrigger.StateChange)
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "StateChange", int(sessionStateChangeTrigger.StateChange))
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "UserId", sessionStateChangeTrigger.UserId)
 			// need to find GUID
 			/*case TASK_TRIGGER_CUSTOM_TRIGGER_01:
@@ -1089,7 +1088,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 	return nil
 }
 
-func checkTriggerType(triggerType int) bool {
+func checkTriggerType(triggerType TaskTriggerType) bool {
 	switch triggerType {
 	case TASK_TRIGGER_BOOT:
 		fallthrough
