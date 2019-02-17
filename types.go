@@ -190,7 +190,7 @@ type TaskService struct {
 
 	RootFolder      RootFolder
 	RunningTasks    []*RunningTask
-	RegisteredTasks []*RegisteredTask
+	RegisteredTasks map[string]*RegisteredTask
 }
 
 type RootFolder struct {
@@ -504,6 +504,9 @@ func (t TaskTrigger) GetStopAtDurationEnd() bool {
 	return t.StopAtDurationEnd
 }
 
+// AddExecAction adds an execute action to the task definition. The args
+// parameter can have up to 32 $(ArgX) values, such as '/c $(Arg0) $(Arg1)'.
+// This will allow the arguments to be dynamically entered when the task is run
 func (d *Definition) AddExecAction(path, args, workingDir, id string) {
 	d.Actions = append(d.Actions, ExecAction{
 		Path:       path,
