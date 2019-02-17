@@ -243,12 +243,12 @@ type NetworkSettings struct {
 }
 
 type Trigger interface {
-	GetDuration() string
 	GetEnabled() bool
 	GetEndBoundary() string
 	GetExecutionTimeLimit() string
 	GetID() string
-	GetInterval() string
+	GetRepitionDuration() string
+	GetRepitionInterval() string
 	GetStartBoundary() string
 	GetStopAtDurationEnd() bool
 	GetType() int
@@ -264,9 +264,10 @@ type TaskTrigger struct {
 	TypeHolder
 }
 
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
 type RepetitionPattern struct {
-	Duration          string
-	Interval          string
+	RepitionDuration  string
+	RepitionInterval  string
 	StopAtDurationEnd bool
 }
 
@@ -320,6 +321,13 @@ type RegistrationTrigger struct {
 	Delay string
 }
 
+type SessionStateChangeTrigger struct {
+	TaskTrigger
+	Delay       string
+	StateChange int
+	UserId      string
+}
+
 type TimeTrigger struct {
 	TaskTrigger
 	RandomDelay string
@@ -330,13 +338,6 @@ type WeeklyTrigger struct {
 	DaysOfWeek    int
 	RandomDelay   string
 	WeeksInterval int
-}
-
-type SessionStateChangeTrigger struct {
-	TaskTrigger
-	Delay       string
-	StateChange int
-	UserId      string
 }
 
 type CustomTrigger struct {
@@ -351,8 +352,8 @@ func (t TypeHolder) GetType() int {
 	return t.Type
 }
 
-func (t TaskTrigger) GetDuration() string {
-	return t.Duration
+func (t TaskTrigger) GetRepitionDuration() string {
+	return t.RepitionDuration
 }
 
 func (t TaskTrigger) GetEnabled() bool {
@@ -371,8 +372,8 @@ func (t TaskTrigger) GetID() string {
 	return t.ID
 }
 
-func (t TaskTrigger) GetInterval() string {
-	return t.Interval
+func (t TaskTrigger) GetRepitionInterval() string {
+	return t.RepitionInterval
 }
 
 func (t TaskTrigger) GetStartBoundary() string {
@@ -383,17 +384,306 @@ func (t TaskTrigger) GetStopAtDurationEnd() bool {
 	return t.StopAtDurationEnd
 }
 
-func (d Definition) AddExecAction(path, args, workingDir string) {
+func (d *Definition) AddExecAction(path, args, workingDir, id string) {
 	d.Actions = append(d.Actions, ExecAction{
 		Path:       path,
 		Args:       args,
 		WorkingDir: workingDir,
+		TaskAction: TaskAction{
+			ID: id,
+			TypeHolder: TypeHolder{
+				Type: TASK_ACTION_EXEC,
+			},
+		},
 	})
 }
 
-func (d Definition) AddComHandlerAction(clsid, data string) {
+func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 	d.Actions = append(d.Actions, ComHandlerAction{
 		ClassID: clsid,
 		Data:    data,
+		TaskAction: TaskAction{
+			ID: id,
+			TypeHolder: TypeHolder{
+				Type: TASK_ACTION_COM_HANDLER,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, BootTrigger{
+		Delay: delay,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_BOOT,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddDailyTrigger(daysInterval int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, DailyTrigger{
+		DaysInterval: daysInterval,
+		RandomDelay:  randomDelay,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_DAILY,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries map[string]string, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, EventTrigger{
+		Delay:        delay,
+		Subscription: subscription,
+		ValueQueries: valueQueries,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_EVENT,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, IdleTrigger{
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_IDLE,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, LogonTrigger{
+		Delay:  delay,
+		UserID: userID,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_LOGON,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddMonthlyDOWTrigger(daysOfWeek, weeksOfMonth, monthsOfYear int, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, MonthlyDOWTrigger{
+		DaysOfWeek:           daysOfWeek,
+		MonthsOfYear:         monthsOfYear,
+		RandomDelay:          randomDelay,
+		RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
+		WeeksOfMonth:         weeksOfMonth,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_MONTHLYDOW,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddMonthlyTrigger(daysOfMonth, monthsOfYear int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, MonthlyTrigger{
+		DaysOfMonth:  daysOfMonth,
+		MonthsOfYear: monthsOfYear,
+		RandomDelay:  randomDelay,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_MONTHLY,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, RegistrationTrigger{
+		Delay: delay,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_REGISTRATION,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange int, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, SessionStateChangeTrigger{
+		Delay:       delay,
+		StateChange: stateChange,
+		UserId:      userID,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_SESSION_STATE_CHANGE,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, TimeTrigger{
+		RandomDelay: randomDelay,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_TIME,
+			},
+		},
+	})
+}
+
+func (d *Definition) AddWeeklyTrigger(daysOfWeek, weeksInterval int, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+	startBoundaryStr := TimeToTaskDate(startBoundary)
+	endBoundaryStr := TimeToTaskDate(endBoundary)
+
+	d.Triggers = append(d.Triggers, WeeklyTrigger{
+		DaysOfWeek:    daysOfWeek,
+		RandomDelay:   randomDelay,
+		WeeksInterval: weeksInterval,
+		TaskTrigger: TaskTrigger{
+			Enabled:            enabled,
+			EndBoundary:        endBoundaryStr,
+			ExecutionTimeLimit: timeLimit,
+			ID:                 id,
+			RepetitionPattern: RepetitionPattern{
+				RepitionDuration:  repitionDuration,
+				RepitionInterval:  repitionInterval,
+				StopAtDurationEnd: stopAtDurationEnd,
+			},
+			StartBoundary: startBoundaryStr,
+			TypeHolder: TypeHolder{
+				Type: TASK_TRIGGER_WEEKLY,
+			},
+		},
 	})
 }

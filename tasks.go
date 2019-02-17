@@ -13,8 +13,6 @@ const (
 	TASK_ENUM_HIDDEN = 1
 )
 
-var taskDateFormat = "2006-01-02T15:04:05.0000000"
-
 func (t *TaskService) initialize() error {
 	var err error
 
@@ -496,8 +494,8 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		ExecutionTimeLimit: executionTimeLimit,
 		ID:                 id,
 		RepetitionPattern: RepetitionPattern{
-			Duration:          duration,
-			Interval:          interval,
+			RepitionDuration:  duration,
+			RepitionInterval:  interval,
 			StopAtDurationEnd: stopAtDurationEnd,
 		},
 		StartBoundary: startBoundary,
@@ -693,19 +691,6 @@ func NewTaskDefinition() Definition {
 	return newDef
 }
 
-func TimeToTaskDate(t time.Time) string {
-	return t.Format(taskDateFormat)
-}
-
-func TaskDateToTime(s string) (time.Time, error) {
-	t, err := time.Parse(taskDateFormat, s)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return t, nil
-}
-
 func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType int, overwrite bool) (bool, error) {
 	var err error
 
@@ -716,11 +701,10 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	nameIndex := strings.LastIndex(path, "\\")
 	folderPath := path[:nameIndex]
 
-	if !t.doesTaskFolderExist(folderPath) {
+	if !t.taskFolderExist(folderPath) {
 		oleutil.MustCallMethod(t.RootFolder.folderObj, "CreateFolder", folderPath, "")
 	} else {
-		_, err = oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
-		if err == nil {
+		if t.registeredTaskExist(path) {
 			if !overwrite {
 				return false, nil
 			}
@@ -745,8 +729,7 @@ func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, p
 		return errors.New("path must start with root folder '\\'")
 	}
 
-	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
-	if err == nil {
+	if !t.registeredTaskExist(path) {
 		return errors.New("registered task doesn't exist")
 	}
 
@@ -794,8 +777,59 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 	return newTaskObj.ToIDispatch(), nil
 }
 
-func (t *TaskService) doesTaskFolderExist(path string) bool {
+func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) error {
+	var err error
+
+	if path[0] != '\\' {
+		return errors.New("path must start with root folder '\\'")
+	}
+
+	if t.registeredTaskExist(path) {
+		return errors.New("input path is a registered task, not a task folder")
+	}
+
+	if !t.taskFolderExist(path) {
+		return errors.New("task folder doesn't exist")
+	}
+
+	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", path, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *TaskService) DeleteTask(path string) error {
+	var err error
+
+	if path[0] != '\\' {
+		return errors.New("path must start with root folder '\\'")
+	}
+
+	if !t.registeredTaskExist(path) {
+		return errors.New("registered task doesn't exist")
+	}
+
+	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *TaskService) taskFolderExist(path string) bool {
 	_, err := oleutil.CallMethod(t.taskServiceObj, "GetFolder", path)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (t *TaskService) registeredTaskExist(path string) bool {
+	_, err := oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
 	if err != nil {
 		return false
 	}
@@ -956,8 +990,8 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 		repetitionObj := oleutil.MustGetProperty(triggerObj, "Repetition").ToIDispatch()
 		defer repetitionObj.Release()
-		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetDuration())
-		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetInterval())
+		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetRepitionDuration())
+		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetRepitionInterval())
 		oleutil.MustPutProperty(repetitionObj, "StopAtDurationEnd", trigger.GetStopAtDurationEnd())
 
 		oleutil.MustPutProperty(triggerObj, "StartBoundary", trigger.GetStartBoundary())
