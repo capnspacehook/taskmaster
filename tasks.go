@@ -144,7 +144,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 	t.RegisteredTasks = nil
 
 	// get tasks from root folder
-	rootTaskCollection := oleutil.MustCallMethod(t.RootFolder.folderObj, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+	rootTaskCollection := oleutil.MustCallMethod(t.RootFolder.folderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
 	defer rootTaskCollection.Release()
 	err = oleutil.ForEach(rootTaskCollection, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
@@ -175,7 +175,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 
 			name := oleutil.MustGetProperty(taskFolder, "Name").ToString()
 			path := oleutil.MustGetProperty(taskFolder, "Path").ToString()
-			taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+			taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
 			defer taskCollection.Release()
 
 			taskSubFolder := &TaskFolder{
