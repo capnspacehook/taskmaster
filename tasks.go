@@ -2,6 +2,8 @@ package taskmaster
 
 import (
 	"errors"
+	"os"
+	"os/user"
 	"strings"
 	"time"
 
@@ -42,18 +44,40 @@ func (t *TaskService) initialize() error {
 // serverName parameter is empty, a connection to the local Task Scheduler service
 // will be attempted. If the user and password parameters are empty, the current
 // token will be used for authentication
-func (t *TaskService) Connect(serverName, domain, user, password string) error {
+func (t *TaskService) Connect(serverName, domain, username, password string) error {
+	var err error
+
 	if !t.isInitialized {
-		err := t.initialize()
+		err = t.initialize()
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err := oleutil.CallMethod(t.taskServiceObj, "Connect", serverName, user, domain, password)
+	_, err = oleutil.CallMethod(t.taskServiceObj, "Connect", serverName, username, domain, password)
 	if err != nil {
 		return err
 	}
+
+	if serverName == "" {
+		serverName, err = os.Hostname()
+		if err != nil {
+			return err
+		}
+	}
+	if domain == "" {
+		domain = serverName
+	}
+	if username == "" {
+		currentUser, err := user.Current()
+		if err != nil {
+			return err
+		}
+		username = strings.Split(currentUser.Username, "\\")[1]
+	}
+	t.connectedDomain = domain
+	t.connectedComputerName = serverName
+	t.connectedUser = username
 
 	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
 	rootFolder := RootFolder{
@@ -659,11 +683,12 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	}
 }
 
-func NewTaskDefinition() Definition {
+func (t TaskService) NewTaskDefinition() Definition {
 	newDef := Definition{}
 
 	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
 	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
+	newDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
 
 	newDef.RegistrationInfo.Date = TimeToTaskDate(time.Now())
 
