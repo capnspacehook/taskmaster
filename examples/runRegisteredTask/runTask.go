@@ -20,6 +20,7 @@ func main() {
 	}
 
 	if task != nil {
+		defer task.Release()
 		task.Run([]string{"/c", "timeout 69"}, taskmaster.TASK_RUN_AS_SELF, 0, "")
 	}
 }

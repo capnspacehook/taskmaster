@@ -19,6 +19,12 @@ func (r *RunningTask) Stop() error {
 	return nil
 }
 
+// Release frees the running task COM object. Must be called before
+// program termination to avoid memory leaks
+func (r *RunningTask) Release() {
+	r.taskObj.Release()
+}
+
 // Run starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned
 func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
@@ -46,4 +52,10 @@ func (r *RegisteredTask) Stop() bool {
 	}
 
 	return true
+}
+
+// Release frees the registered task COM object. Must be called before
+// program termination to avoid memory leaks
+func (r *RegisteredTask) Release() {
+	r.taskObj.Release()
 }
