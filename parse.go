@@ -135,8 +135,8 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		execAction := ExecAction{
 			TaskAction: TaskAction{
 				ID: id,
-				TaskActionTypeHolder: TaskActionTypeHolder{
-					Type: actionType,
+				taskActionTypeHolder: taskActionTypeHolder{
+					actionType: actionType,
 				},
 			},
 			Path:       path,
@@ -152,8 +152,8 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		comHandlerAction := ComHandlerAction{
 			TaskAction: TaskAction{
 				ID: id,
-				TaskActionTypeHolder: TaskActionTypeHolder{
-					Type: actionType,
+				taskActionTypeHolder: taskActionTypeHolder{
+					actionType: actionType,
 				},
 			},
 			ClassID: classID,
@@ -306,8 +306,8 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 			StopAtDurationEnd: stopAtDurationEnd,
 		},
 		StartBoundary: startBoundary,
-		TaskTriggerTypeHolder: TaskTriggerTypeHolder{
-			Type: triggerType,
+		taskTriggerTypeHolder: taskTriggerTypeHolder{
+			triggerType: triggerType,
 		},
 	}
 
