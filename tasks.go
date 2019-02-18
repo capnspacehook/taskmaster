@@ -344,8 +344,8 @@ func (r *RunningTask) Release() {
 // Run starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned
 func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
-	if sessionID != 0 {
-		flags |= TASK_RUN_USE_SESSION_ID
+	if !r.Enabled {
+		return nil, errors.New("cannot run a disabled task")
 	}
 
 	runningTaskObj, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)

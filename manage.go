@@ -58,7 +58,21 @@ func (t *TaskService) Connect(serverName, domain, username, password string) err
 
 	_, err = oleutil.CallMethod(t.taskServiceObj, "Connect", serverName, username, domain, password)
 	if err != nil {
-		return err
+		errCode := err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
+		switch errCode {
+		case 0x80070005:
+			return errors.New("access is denied to connect to the Task Scheduler service")
+		case 0x80041315:
+			return errors.New("the Task Scheduler service is not running")
+		case 0x8007000e:
+			return errors.New("the application does not have enough memory to complete the operation")
+		case 53:
+			return errors.New("cannot connect to target computer")
+		case 50:
+			return errors.New("cannot connect to the XP or server 2003 computer")
+		default:
+			return err
+		}
 	}
 
 	if serverName == "" {
@@ -302,7 +316,7 @@ func (t TaskService) NewTaskDefinition() Definition {
 }
 
 // CreateTask creates a registered tasks on the connected computer. CreateTask returns
-// true if the task was successfuly registered, and false if the overwrite parameter
+// true if the task was successfully registered, and false if the overwrite parameter
 // is false and a task at the specified path already exists
 func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (bool, error) {
 	var err error
@@ -380,43 +394,48 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 		return nil, err
 	}
 
-	// make sure registration triggers won't trigger themselves
-	for _, trigger := range newTaskDef.Triggers {
-		if trigger.GetType() == TASK_TRIGGER_REGISTRATION {
-			flags |= TASK_IGNORE_REGISTRATION_TRIGGERS
-		}
-	}
-
 	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, int(flags), username, password, int(logonType), "")
 	if err != nil {
-		return nil, err
+		errCode := err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
+		switch errCode {
+		case 0x80070005:
+			return nil, errors.New("access is denied to connect to the Task Scheduler service")
+		case 0x8007000e:
+			return nil, errors.New("the application does not have enough memory to complete the operation")
+		case 0x0004131C:
+			return nil, errors.New("the task is registered, but may fail to start; batch logon privilege needs to be enabled for the task principal")
+		case 0x0004131B:
+			return nil, errors.New("the task is registered, but not all specified triggers will start the task")
+		default:
+			return nil, err
+		}
 	}
 
 	return newTaskObj.ToIDispatch(), nil
 }
 
 // DeleteFolder removes a task folder from the connected computer
-func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) error {
+func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, error) {
 	var err error
 
 	if path[0] != '\\' {
-		return errors.New("path must start with root folder '\\'")
+		return false, errors.New("path must start with root folder '\\'")
 	}
 
 	if t.registeredTaskExist(path) {
-		return errors.New("input path is a registered task, not a task folder")
+		return false, errors.New("input path is a registered task, not a task folder")
 	}
 
 	if !t.taskFolderExist(path) {
-		return errors.New("task folder doesn't exist")
+		return false, errors.New("task folder doesn't exist")
 	}
 
 	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", path, 0)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 // DeleteTask removes a registered task from the connected computer
