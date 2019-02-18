@@ -7,7 +7,7 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 )
 
-// Stop cancels a running task
+// Stop kills a running task
 func (r *RunningTask) Stop() error {
 	stopResult := oleutil.MustCallMethod(r.taskObj, "Stop").Val
 	if stopResult != 0 {
@@ -19,15 +19,31 @@ func (r *RunningTask) Stop() error {
 	return nil
 }
 
-func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) error {
+// Run starts an instance of a registered task. If the task was started successfully,
+// a pointer to a running task will be returned
+func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
 	if sessionID != 0 {
 		flags |= TASK_RUN_USE_SESSION_ID
 	}
 
-	_, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)
+	runningTaskObj, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	runningTask := parseRunningTask(runningTaskObj.ToIDispatch())
+
+	return &runningTask, nil
+}
+
+// Stop kills all running instances of the registered task that the current
+// user has access to. If all instances were killed, Stop returns true,
+// otherwise Stop returns false
+func (r *RegisteredTask) Stop() bool {
+	ret, _ := oleutil.CallMethod(r.taskObj, "Stop", 0)
+	if ret.Val != 0 {
+		return false
+	}
+
+	return true
 }

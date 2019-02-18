@@ -29,6 +29,7 @@ func main() {
 					if trigger.GetType() == taskmaster.TASK_TRIGGER_LOGON {
 						fmt.Println("\n--------------------------------------------------------")
 						fmt.Printf("Name: %s\n", task.Name)
+						fmt.Printf("Path: %s\n", task.Path)
 						fmt.Printf("Context: %s\n", task.Definition.Context)
 						fmt.Printf("CLSID: %s\n", action.(taskmaster.ComHandlerAction).ClassID)
 					}
