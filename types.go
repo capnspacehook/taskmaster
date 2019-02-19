@@ -428,95 +428,95 @@ type RepetitionPattern struct {
 	StopAtDurationEnd bool   // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
 }
 
-// BootTrigger triggers the task when the computer boots.
-// https://msdn.microsoft.com/8f186ee2-8d74-426c-9173-523a335422c9
+// BootTrigger triggers the task when the computer boots. Only Administrators can create tasks with a BootTrigger.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iboottrigger
 type BootTrigger struct {
 	TaskTrigger
-	Delay string
+	Delay string // indicates the amount of time between when the system is booted and when the task is started
 }
 
-// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day.
-// https://msdn.microsoft.com/9980ddb1-9873-46d2-8dea-bfc3fd78bba8
+// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day. The time of day that the task is started is set by StartBoundary.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-idailytrigger
 type DailyTrigger struct {
 	TaskTrigger
-	DayInterval DayInterval
-	RandomDelay string
+	DayInterval DayInterval // the interval between the days in the schedule
+	RandomDelay string      // a delay time that is randomly added to the start time of the trigger
 }
 
-// EventTrigger triggers the task when a specific event occurs.
-// https://msdn.microsoft.com/23b7ecb9-d2bb-441a-8c93-126c833f99b9
+// EventTrigger triggers the task when a specific event occurs. A maximum of 500 tasks with event subscriptions can be created.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ieventtrigger
 type EventTrigger struct {
 	TaskTrigger
-	Delay        string
-	Subscription string
-	ValueQueries map[string]string
+	Delay        string            // indicates the amount of time between when the event occurs and when the task is started
+	Subscription string            // a query string that identifies the event that fires the trigger
+	ValueQueries map[string]string // a collection of named XPath queries. Each query in the collection is applied to the last matching event XML returned from the subscription query
 }
 
-// IdleTrigger triggers the task when the computer goes into an idle state.
-// https://msdn.microsoft.com/aca5305f-68fc-4211-9f71-3f572340e94d
+// IdleTrigger triggers the task when the computer goes into an idle state. An IdleTrigger will only trigger a task action if the computer goes into an idle state after the start boundary of the trigger
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iidletrigger
 type IdleTrigger struct {
 	TaskTrigger
 }
 
-// LogonTrigger triggers the task when a specific user logs on.
-// https://msdn.microsoft.com/c0206a18-53f2-4def-8f54-2b175a0579f4
+// LogonTrigger triggers the task when a specific user logs on. When the Task Scheduler service starts, all logged-on users are enumerated and any tasks registered with logon triggers that match the logged on user are run.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ilogontrigger
 type LogonTrigger struct {
 	TaskTrigger
-	Delay  string
-	UserID string
+	Delay  string // indicates the amount of time between when the user logs on and when the task is started
+	UserID string // the identifier of the user. If left empty, the trigger will fire when any user logs on
 }
 
 // MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year.
-// https://msdn.microsoft.com/a950e4a0-1fcc-4213-bdb7-d1e1cf28fe91
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlydowtrigger
 type MonthlyDOWTrigger struct {
 	TaskTrigger
-	DayOfWeek            Day
-	MonthOfYear          Month
-	RandomDelay          string
-	RunOnLastWeekOfMonth bool
-	WeekOfMonth          Week
+	DaysOfWeek           Day    // the days of the week during which the task runs
+	MonthsOfYear         Month  // the months of the year during which the task runs
+	RandomDelay          string // a delay time that is randomly added to the start time of the trigger
+	RunOnLastWeekOfMonth bool   // indicates that the task runs on the last week of the month
+	WeeksOfMonth         Week   // the weeks of the month during which the task runs
 }
 
 // MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months.
-// https://msdn.microsoft.com/2ed206a6-22e0-4131-92ce-29536ad65c6c
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlytrigger
 type MonthlyTrigger struct {
 	TaskTrigger
-	DayOfMonth           DayOfMonth
-	MonthOfYear          Month
-	RandomDelay          string
-	RunOnLastWeekOfMonth bool
+	DaysOfMonth          DayOfMonth // the days of the month during which the task runs
+	MonthsOfYear         Month      // the months of the year during which the task runs
+	RandomDelay          string     // a delay time that is randomly added to the start time of the trigger
+	RunOnLastWeekOfMonth bool       // indicates that the task runs on the last week of the month
 }
 
 // RegistrationTrigger triggers the task when the task is registered.
-// https://msdn.microsoft.com/0862f7ac-69d6-4271-8d39-c5bd7038a95e
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregistrationtrigger
 type RegistrationTrigger struct {
 	TaskTrigger
-	Delay string
+	Delay string // the amount of time between when the task is registered and when the task is started
 }
 
 // SessionStateChangeTrigger triggers the task when a specific user session state changes.
-// https://msdn.microsoft.com/0bf56d67-6c44-4978-93a9-7b525f2bf140
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-isessionstatechangetrigger
 type SessionStateChangeTrigger struct {
 	TaskTrigger
-	Delay       string
-	StateChange TaskSessionStateChangeType
-	UserId      string
+	Delay       string                     // indicates how long of a delay takes place before a task is started after a Terminal Server session state change is detected
+	StateChange TaskSessionStateChangeType // the kind of Terminal Server session change that would trigger a task launch
+	UserId      string                     // the user for the Terminal Server session. When a session state change is detected for this user, a task is started
 }
 
-// TimeTrigger triggers the task at a specific time of day.
-// https://msdn.microsoft.com/4ebd5470-0801-42ff-a0c2-4d1e7f7ee365
+// TimeTrigger triggers the task at a specific time of day. StartBoundary detirmines when the trigger fires.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itimetrigger
 type TimeTrigger struct {
 	TaskTrigger
-	RandomDelay string
+	RandomDelay string // a delay time that is randomly added to the start time of the trigger
 }
 
-// WeeklyTrigger triggers the task on a weekly schedule. For example, the task starts at 8:00 AM on a specific day every week or other week.
-// https://msdn.microsoft.com/c10b050a-8319-4e21-85aa-0bceb76abaaf
+// WeeklyTrigger triggers the task on a weekly schedule.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iweeklytrigger
 type WeeklyTrigger struct {
 	TaskTrigger
-	DayOfWeek    Day
-	RandomDelay  string
-	WeekInterval WeekInterval
+	DaysOfWeek   Day          // the days of the week in which the task runs
+	RandomDelay  string       // a delay time that is randomly added to the start time of the trigger
+	WeekInterval WeekInterval // the interval between the weeks in the schedule
 }
 
 type CustomTrigger struct {

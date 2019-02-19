@@ -169,11 +169,11 @@ func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, month
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, MonthlyDOWTrigger{
-		DayOfWeek:            dayOfWeek,
-		MonthOfYear:          monthOfYear,
+		DaysOfWeek:           dayOfWeek,
+		MonthsOfYear:         monthOfYear,
 		RandomDelay:          randomDelay,
 		RunOnLastWeekOfMonth: runOnLastWeekOfMonth,
-		WeekOfMonth:          weekOfMonth,
+		WeeksOfMonth:         weekOfMonth,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,
@@ -201,9 +201,9 @@ func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, random
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, MonthlyTrigger{
-		DayOfMonth:  monthDay,
-		MonthOfYear: monthOfYear,
-		RandomDelay: randomDelay,
+		DaysOfMonth:  monthDay,
+		MonthsOfYear: monthOfYear,
+		RandomDelay:  randomDelay,
 		TaskTrigger: TaskTrigger{
 			Enabled:            enabled,
 			EndBoundary:        endBoundaryStr,
@@ -303,7 +303,7 @@ func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, 
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
 	d.Triggers = append(d.Triggers, WeeklyTrigger{
-		DayOfWeek:    dayOfWeek,
+		DaysOfWeek:   dayOfWeek,
 		RandomDelay:  randomDelay,
 		WeekInterval: weekInterval,
 		TaskTrigger: TaskTrigger{
