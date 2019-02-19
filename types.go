@@ -72,6 +72,7 @@ const (
 )
 
 // TaskActionType specifies the type of a task action
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_action_type
 type TaskActionType int
 
 const (
@@ -82,6 +83,7 @@ const (
 )
 
 // TaskCompatibility specifies the compatibility of a registered task
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_compatibility
 type TaskCompatibility int
 
 const (
@@ -95,6 +97,7 @@ const (
 )
 
 // TaskCreationFlags specifies how a task will be created
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_creation
 type TaskCreationFlags int
 
 const (
@@ -108,80 +111,88 @@ const (
 )
 
 // TaskEnumFlags specifies how tasks will be enumerated
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_enum_flags
 type TaskEnumFlags int
 
 const (
-	TASK_ENUM_HIDDEN TaskEnumFlags = 1
+	TASK_ENUM_HIDDEN TaskEnumFlags = 1 // enumerate all tasks, including tasks that are hidden
 )
 
 // TaskInstancesPolicy specifies what the Task Scheduler service will do when
 // multiple instances of a task are triggered or operating at once
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_instances_policy
 type TaskInstancesPolicy int
 
 const (
-	TASK_INSTANCES_PARALLEL TaskInstancesPolicy = iota
-	TASK_INSTANCES_QUEUE
-	TASK_INSTANCES_IGNORE_NEW
-	TASK_INSTANCES_STOP_EXISTING
+	TASK_INSTANCES_PARALLEL      TaskInstancesPolicy = iota // start new instance while an existing instance is running
+	TASK_INSTANCES_QUEUE                                    // start a new instance of the task after all other instances of the task are complete
+	TASK_INSTANCES_IGNORE_NEW                               // do not start a new instance if an existing instance of the task is running
+	TASK_INSTANCES_STOP_EXISTING                            // stop an existing instance of the task before it starts a new instance
 )
 
 // TaskLogonType specifies how a registered task will authenticate when it executes
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_logon_type
 type TaskLogonType int
 
 const (
-	TASK_LOGON_NONE TaskLogonType = iota
-	TASK_LOGON_PASSWORD
-	TASK_LOGON_S4U
-	TASK_LOGON_INTERACTIVE_TOKEN
-	TASK_LOGON_GROUP
-	TASK_LOGON_SERVICE_ACCOUNT
-	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD
+	TASK_LOGON_NONE                          TaskLogonType = iota // the logon method is not specified. Used for non-NT credentials
+	TASK_LOGON_PASSWORD                                           // use a password for logging on the user. The password must be supplied at registration time
+	TASK_LOGON_S4U                                                // the service will log the user on using Service For User (S4U), and the task will run in a non-interactive desktop. When an S4U logon is used, no password is stored by the system and there is no access to either the network or to encrypted files
+	TASK_LOGON_INTERACTIVE_TOKEN                                  // user must already be logged on. The task will be run only in an existing interactive session
+	TASK_LOGON_GROUP                                              // group activation
+	TASK_LOGON_SERVICE_ACCOUNT                                    // indicates that a Local System, Local Service, or Network Service account is being used as a security context to run the task
+	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD                      // first use the interactive token. If the user is not logged on (no interactive token is available), then the password is used. The password must be specified when a task is registered. This flag is not recommended for new tasks because it is less reliable than TASK_LOGON_PASSWORD
 )
 
 // TaskRunFlags specifies how a task will be executed
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_run_flags
 type TaskRunFlags int
 
 const (
-	TASK_RUN_NO_FLAGS           TaskRunFlags = 0
-	TASK_RUN_AS_SELF            TaskRunFlags = 1
-	TASK_RUN_IGNORE_CONSTRAINTS TaskRunFlags = 2
-	TASK_RUN_USE_SESSION_ID     TaskRunFlags = 4
-	TASK_RUN_USER_SID           TaskRunFlags = 8
+	TASK_RUN_NO_FLAGS           TaskRunFlags = 0 // the task is run with all flags ignored
+	TASK_RUN_AS_SELF            TaskRunFlags = 1 // the task is run as the user who is calling the Run method
+	TASK_RUN_IGNORE_CONSTRAINTS TaskRunFlags = 2 // the task is run regardless of constraints such as "do not run on batteries" or "run only if idle"
+	TASK_RUN_USE_SESSION_ID     TaskRunFlags = 4 // the task is run using a terminal server session identifier
+	TASK_RUN_USER_SID           TaskRunFlags = 8 // the task is run using a security identifier
 )
 
 // TaskRunLevel specifies whether the task will be run with full permissions or not
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_runlevel_type
 type TaskRunLevel int
 
 const (
-	TASK_RUNLEVEL_LUA TaskRunLevel = iota
-	TASK_RUNLEVEL_HIGHEST
+	TASK_RUNLEVEL_LUA     TaskRunLevel = iota // task will be run with the least privilege
+	TASK_RUNLEVEL_HIGHEST                     // task will be run with the highest privileges
 )
 
 // TaskSessionStateChangeType specifies the type of session state change that a
 // SessionStateChange trigger will trigger on
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_session_state_change_type
 type TaskSessionStateChangeType int
 
 const (
-	TASK_CONSOLE_CONNECT TaskSessionStateChangeType = iota
-	TASK_CONSOLE_DISCONNECT
-	TASK_REMOTE_CONNECT
-	TASK_REMOTE_DISCONNECT
-	TASK_SESSION_LOCK
-	TASK_SESSION_UNLOCK
+	TASK_CONSOLE_CONNECT    TaskSessionStateChangeType = iota // Terminal Server console connection state change. For example, when you connect to a user session on the local computer by switching users on the computer
+	TASK_CONSOLE_DISCONNECT                                   // Terminal Server console disconnection state change. For example, when you disconnect to a user session on the local computer by switching users on the computer
+	TASK_REMOTE_CONNECT                                       // Terminal Server remote connection state change. For example, when a user connects to a user session by using the Remote Desktop Connection program from a remote computer
+	TASK_REMOTE_DISCONNECT                                    // Terminal Server remote disconnection state change. For example, when a user disconnects from a user session while using the Remote Desktop Connection program from a remote computer
+	TASK_SESSION_LOCK                                         // Terminal Server session locked state change. For example, this state change causes the task to run when the computer is locked
+	TASK_SESSION_UNLOCK                                       // Terminal Server session unlocked state change. For example, this state change causes the task to run when the computer is unlocked
 )
 
 // TaskState specifies the state of a running or registered task
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_state
 type TaskState int
 
 const (
-	TASK_STATE_UNKNOWN TaskState = iota
-	TASK_STATE_DISABLED
-	TASK_STATE_QUEUED
-	TASK_STATE_READY
-	TASK_STATE_RUNNING
+	TASK_STATE_UNKNOWN  TaskState = iota // the state of the task is unknown
+	TASK_STATE_DISABLED                  // the task is registered but is disabled and no instances of the task are queued or running. The task cannot be run until it is enabled
+	TASK_STATE_QUEUED                    // instances of the task are queued
+	TASK_STATE_READY                     // the task is ready to be executed, but no instances are queued or running
+	TASK_STATE_RUNNING                   // one or more instances of the task is running
 )
 
 // TaskTriggerType specifies the type of a task trigger
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_trigger_type2
 type TaskTriggerType int
 
 const (
@@ -272,6 +283,8 @@ type TaskAction struct {
 	taskActionTypeHolder
 }
 
+// ExecAction is an action that performs a command-line operation
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iexecaction
 type ExecAction struct {
 	TaskAction
 	Path       string
@@ -279,12 +292,16 @@ type ExecAction struct {
 	WorkingDir string
 }
 
+// ComHandlerAction is an action that fires a COM handler. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-icomhandleraction
 type ComHandlerAction struct {
 	TaskAction
 	ClassID string
 	Data    string
 }
 
+// EmailAction is an action that sends email message. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iemailaction
 type EmailAction struct {
 	TaskAction
 	Body    string
@@ -297,6 +314,8 @@ type EmailAction struct {
 	From    string
 }
 
+// MessageAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ishowmessageaction
 type MessageAction struct {
 	TaskAction
 	Title   string
@@ -390,17 +409,23 @@ type RepetitionPattern struct {
 	StopAtDurationEnd bool
 }
 
+// BootTrigger triggers the task when the computer boots
+// https://msdn.microsoft.com/8f186ee2-8d74-426c-9173-523a335422c9
 type BootTrigger struct {
 	TaskTrigger
 	Delay string
 }
 
+// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day
+// https://msdn.microsoft.com/9980ddb1-9873-46d2-8dea-bfc3fd78bba8
 type DailyTrigger struct {
 	TaskTrigger
 	DayInterval DayInterval
 	RandomDelay string
 }
 
+// EventTrigger triggers the task when a specific event occurs
+// https://msdn.microsoft.com/23b7ecb9-d2bb-441a-8c93-126c833f99b9
 type EventTrigger struct {
 	TaskTrigger
 	Delay        string
@@ -408,16 +433,22 @@ type EventTrigger struct {
 	ValueQueries map[string]string
 }
 
+// IdleTrigger triggers the task when the computer goes into an idle state
+// https://msdn.microsoft.com/aca5305f-68fc-4211-9f71-3f572340e94d
 type IdleTrigger struct {
 	TaskTrigger
 }
 
+// LogonTrigger triggers the task when a specific user logs on
+// https://msdn.microsoft.com/c0206a18-53f2-4def-8f54-2b175a0579f4
 type LogonTrigger struct {
 	TaskTrigger
 	Delay  string
 	UserID string
 }
 
+// MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year
+// https://msdn.microsoft.com/a950e4a0-1fcc-4213-bdb7-d1e1cf28fe91
 type MonthlyDOWTrigger struct {
 	TaskTrigger
 	DayOfWeek            Day
@@ -427,6 +458,8 @@ type MonthlyDOWTrigger struct {
 	WeekOfMonth          Week
 }
 
+// MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months
+// https://msdn.microsoft.com/2ed206a6-22e0-4131-92ce-29536ad65c6c
 type MonthlyTrigger struct {
 	TaskTrigger
 	DayOfMonth           DayOfMonth
@@ -435,11 +468,15 @@ type MonthlyTrigger struct {
 	RunOnLastWeekOfMonth bool
 }
 
+// RegistrationTrigger triggers the task when the task is registered
+// https://msdn.microsoft.com/0862f7ac-69d6-4271-8d39-c5bd7038a95e
 type RegistrationTrigger struct {
 	TaskTrigger
 	Delay string
 }
 
+// SessionStateChangeTrigger triggers the task when a specific user session state changes
+// https://msdn.microsoft.com/0bf56d67-6c44-4978-93a9-7b525f2bf140
 type SessionStateChangeTrigger struct {
 	TaskTrigger
 	Delay       string
@@ -447,11 +484,15 @@ type SessionStateChangeTrigger struct {
 	UserId      string
 }
 
+// TimeTrigger triggers the task at a specific time of day
+// https://msdn.microsoft.com/4ebd5470-0801-42ff-a0c2-4d1e7f7ee365
 type TimeTrigger struct {
 	TaskTrigger
 	RandomDelay string
 }
 
+// WeeklyTrigger triggers the task on a weekly schedule. For example, the task starts at 8:00 AM on a specific day every week or other week
+// https://msdn.microsoft.com/c10b050a-8319-4e21-85aa-0bceb76abaaf
 type WeeklyTrigger struct {
 	TaskTrigger
 	DayOfWeek    Day

@@ -414,7 +414,9 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 	return newTaskObj.ToIDispatch(), nil
 }
 
-// DeleteFolder removes a task folder from the connected computer
+// DeleteFolder removes a task folder from the connected computer. If the deleteRecursively parameter
+// is set to true, all tasks and subfolders will be removed recursively. If it's set to false, DeleteFolder
+// will return true if the folder was empty and deleted successfully, and false otherwise
 func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, error) {
 	var err error
 
