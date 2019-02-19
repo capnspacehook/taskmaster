@@ -426,10 +426,80 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 		return false, errors.New("input path is a registered task, not a task folder")
 	}
 
-	if !t.taskFolderExist(path) {
+	taskFolder, err := oleutil.CallMethod(t.taskServiceObj, "GetFolder", path)
+	if err != nil {
 		return false, errors.New("task folder doesn't exist")
 	}
 
+	taskFolderObj := taskFolder.ToIDispatch()
+	defer taskFolderObj.Release()
+	taskCollection := oleutil.MustCallMethod(taskFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	defer taskCollection.Release()
+	if !deleteRecursively && oleutil.MustGetProperty(taskCollection, "Count").Val > 0 {
+		return false, nil
+	}
+
+	folderCollection := oleutil.MustCallMethod(taskFolderObj, "GetFolders", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	defer folderCollection.Release()
+	if !deleteRecursively && oleutil.MustGetProperty(folderCollection, "Count").Val > 0 {
+		return false, nil
+	}
+
+	if deleteRecursively {
+		// delete tasks in parent folder
+		deleteAllTasks := func(v *ole.VARIANT) error {
+			taskObj := v.ToIDispatch()
+			defer taskObj.Release()
+
+			name := oleutil.MustGetProperty(taskObj, "Path").ToString()
+
+			return t.DeleteTask(name)
+		}
+		err = oleutil.ForEach(taskCollection, deleteAllTasks)
+		if err != nil {
+			return false, err
+		}
+
+		var deleteTasksRecursively func(*ole.VARIANT) error
+		deleteTasksRecursively = func(v *ole.VARIANT) error {
+			var err error
+
+			folderObj := v.ToIDispatch()
+			defer folderObj.Release()
+
+			tasks := oleutil.MustCallMethod(folderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+			defer tasks.Release()
+
+			err = oleutil.ForEach(tasks, deleteAllTasks)
+			if err != nil {
+				return err
+			}
+
+			subFolders := oleutil.MustCallMethod(folderObj, "GetFolders", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+			defer subFolders.Release()
+
+			err = oleutil.ForEach(subFolders, deleteTasksRecursively)
+			if err != nil {
+				return err
+			}
+
+			currentFolderPath := oleutil.MustGetProperty(folderObj, "Path").ToString()
+			_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", currentFolderPath, 0)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		// delete all subfolders and tasks recursively
+		err = oleutil.ForEach(folderCollection, deleteTasksRecursively)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// delete parent folder
 	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", path, 0)
 	if err != nil {
 		return false, err
@@ -456,8 +526,10 @@ func (t *TaskService) DeleteTask(path string) error {
 	}
 
 	// update the internal database of registered tasks
-	t.RegisteredTasks[path].taskObj.Release()
-	delete(t.RegisteredTasks, path)
+	if deletedTask, exists := t.RegisteredTasks[path]; exists {
+		deletedTask.taskObj.Release()
+		delete(t.RegisteredTasks, path)
+	}
 
 	return nil
 }
