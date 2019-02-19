@@ -366,14 +366,14 @@ type TaskSettings struct {
 	IdleSettings
 	MultipleInstances TaskInstancesPolicy // defines how the Task Scheduler deals with multiple instances of the task
 	NetworkSettings
-	Priority                 int    // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Emainl, and MessageBox actions
-	RestartCount             int    // the number of times that the Task Scheduler will attempt to restart the task
-	RestartInterval          string // specifies how long the Task Scheduler will attempt to restart the task
-	RunOnlyIfIdle            bool   // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
-	RunOnlyIfNetworkAvalible bool   // indicates that the Task Scheduler will run the task only when a network is available
-	StartWhenAvalible        bool   // indicates that the Task Scheduler can start the task at any time after its scheduled time has passed
-	StopIfGoingOnBatteries   bool   // indicates that the task will be stopped if the computer is going onto batteries
-	WakeToRun                bool   // indicates that the Task Scheduler will wake the computer when it is time to run the task, and keep the computer awake until the task is completed
+	Priority                  int    // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Email, and MessageBox actions
+	RestartCount              int    // the number of times that the Task Scheduler will attempt to restart the task
+	RestartInterval           string // specifies how long the Task Scheduler will attempt to restart the task
+	RunOnlyIfIdle             bool   // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
+	RunOnlyIfNetworkAvailable bool   // indicates that the Task Scheduler will run the task only when a network is available
+	StartWhenAvailable        bool   // indicates that the Task Scheduler can start the task at any time after its scheduled time has passed
+	StopIfGoingOnBatteries    bool   // indicates that the task will be stopped if the computer is going onto batteries
+	WakeToRun                 bool   // indicates that the Task Scheduler will wake the computer when it is time to run the task, and keep the computer awake until the task is completed
 }
 
 // IdleSettings specifies how the Task Scheduler performs tasks when the computer is in an idle condition.
@@ -397,8 +397,8 @@ type Trigger interface {
 	GetEndBoundary() string
 	GetExecutionTimeLimit() string
 	GetID() string
-	GetRepitionDuration() string
-	GetRepitionInterval() string
+	GetRepetitionDuration() string
+	GetRepetitionInterval() string
 	GetStartBoundary() string
 	GetStopAtDurationEnd() bool
 	GetType() TaskTriggerType
@@ -423,9 +423,9 @@ type TaskTrigger struct {
 // RepetitionPattern defines how often the task is run and how long the repetition pattern is repeated after the task is started.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
 type RepetitionPattern struct {
-	RepitionDuration  string // how long the pattern is repeated
-	RepitionInterval  string // the amount of time between each restart of the task. Required if RepetitionDuration is specified
-	StopAtDurationEnd bool   // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
+	RepetitionDuration string // how long the pattern is repeated
+	RepetitionInterval string // the amount of time between each restart of the task. Required if RepetitionDuration is specified
+	StopAtDurationEnd  bool   // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
 }
 
 // BootTrigger triggers the task when the computer boots. Only Administrators can create tasks with a BootTrigger.
@@ -503,7 +503,7 @@ type SessionStateChangeTrigger struct {
 	UserId      string                     // the user for the Terminal Server session. When a session state change is detected for this user, a task is started
 }
 
-// TimeTrigger triggers the task at a specific time of day. StartBoundary detirmines when the trigger fires.
+// TimeTrigger triggers the task at a specific time of day. StartBoundary determines when the trigger fires.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itimetrigger
 type TimeTrigger struct {
 	TaskTrigger
@@ -551,8 +551,8 @@ func (t taskTriggerTypeHolder) GetType() TaskTriggerType {
 	return t.triggerType
 }
 
-func (t TaskTrigger) GetRepitionDuration() string {
-	return t.RepitionDuration
+func (t TaskTrigger) GetRepetitionDuration() string {
+	return t.RepetitionDuration
 }
 
 func (t TaskTrigger) GetEnabled() bool {
@@ -571,8 +571,8 @@ func (t TaskTrigger) GetID() string {
 	return t.ID
 }
 
-func (t TaskTrigger) GetRepitionInterval() string {
-	return t.RepitionInterval
+func (t TaskTrigger) GetRepetitionInterval() string {
+	return t.RepetitionInterval
 }
 
 func (t TaskTrigger) GetStartBoundary() string {

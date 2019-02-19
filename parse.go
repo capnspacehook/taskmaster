@@ -238,8 +238,8 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	restartCount := int(oleutil.MustGetProperty(settings, "RestartCount").Val)
 	restartInterval := oleutil.MustGetProperty(settings, "RestartInterval").ToString()
 	runOnlyIfIdle := oleutil.MustGetProperty(settings, "RunOnlyIfIdle").Value().(bool)
-	runOnlyIfNetworkAvalible := oleutil.MustGetProperty(settings, "RunOnlyIfNetworkAvailable").Value().(bool)
-	startWhenAvalible := oleutil.MustGetProperty(settings, "StartWhenAvailable").Value().(bool)
+	runOnlyIfNetworkAvailable := oleutil.MustGetProperty(settings, "RunOnlyIfNetworkAvailable").Value().(bool)
+	startWhenAvailable := oleutil.MustGetProperty(settings, "StartWhenAvailable").Value().(bool)
 	stopIfGoingOnBatteries := oleutil.MustGetProperty(settings, "StopIfGoingOnBatteries").Value().(bool)
 	wakeToRun := oleutil.MustGetProperty(settings, "WakeToRun").Value().(bool)
 
@@ -256,25 +256,25 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 	}
 
 	taskSettings := TaskSettings{
-		AllowDemandStart:         allowDemandStart,
-		AllowHardTerminate:       allowHardTerminate,
-		Compatibility:            compatibility,
-		DeleteExpiredTaskAfter:   deleteExpiredTaskAfter,
-		DontStartOnBatteries:     dontStartOnBatteries,
-		Enabled:                  enabled,
-		TimeLimit:                timeLimit,
-		Hidden:                   hidden,
-		IdleSettings:             idleTaskSettings,
-		MultipleInstances:        multipleInstances,
-		NetworkSettings:          networkTaskSettings,
-		Priority:                 priority,
-		RestartCount:             restartCount,
-		RestartInterval:          restartInterval,
-		RunOnlyIfIdle:            runOnlyIfIdle,
-		RunOnlyIfNetworkAvalible: runOnlyIfNetworkAvalible,
-		StartWhenAvalible:        startWhenAvalible,
-		StopIfGoingOnBatteries:   stopIfGoingOnBatteries,
-		WakeToRun:                wakeToRun,
+		AllowDemandStart:          allowDemandStart,
+		AllowHardTerminate:        allowHardTerminate,
+		Compatibility:             compatibility,
+		DeleteExpiredTaskAfter:    deleteExpiredTaskAfter,
+		DontStartOnBatteries:      dontStartOnBatteries,
+		Enabled:                   enabled,
+		TimeLimit:                 timeLimit,
+		Hidden:                    hidden,
+		IdleSettings:              idleTaskSettings,
+		MultipleInstances:         multipleInstances,
+		NetworkSettings:           networkTaskSettings,
+		Priority:                  priority,
+		RestartCount:              restartCount,
+		RestartInterval:           restartInterval,
+		RunOnlyIfIdle:             runOnlyIfIdle,
+		RunOnlyIfNetworkAvailable: runOnlyIfNetworkAvailable,
+		StartWhenAvailable:        startWhenAvailable,
+		StopIfGoingOnBatteries:    stopIfGoingOnBatteries,
+		WakeToRun:                 wakeToRun,
 	}
 
 	return taskSettings
@@ -301,9 +301,9 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		ExecutionTimeLimit: executionTimeLimit,
 		ID:                 id,
 		RepetitionPattern: RepetitionPattern{
-			RepitionDuration:  duration,
-			RepitionInterval:  interval,
-			StopAtDurationEnd: stopAtDurationEnd,
+			RepetitionDuration: duration,
+			RepetitionInterval: interval,
+			StopAtDurationEnd:  stopAtDurationEnd,
 		},
 		StartBoundary: startBoundary,
 		taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -598,8 +598,8 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(settingsObj, "RestartCount", settings.RestartCount)
 	oleutil.MustPutProperty(settingsObj, "RestartInterval", settings.RestartInterval)
 	oleutil.MustPutProperty(settingsObj, "RunOnlyIfIdle", settings.RunOnlyIfIdle)
-	oleutil.MustPutProperty(settingsObj, "RunOnlyIfNetworkAvailable", settings.RunOnlyIfNetworkAvalible)
-	oleutil.MustPutProperty(settingsObj, "StartWhenAvailable", settings.StartWhenAvalible)
+	oleutil.MustPutProperty(settingsObj, "RunOnlyIfNetworkAvailable", settings.RunOnlyIfNetworkAvailable)
+	oleutil.MustPutProperty(settingsObj, "StartWhenAvailable", settings.StartWhenAvailable)
 	oleutil.MustPutProperty(settingsObj, "StopIfGoingOnBatteries", settings.StopIfGoingOnBatteries)
 	oleutil.MustPutProperty(settingsObj, "WakeToRun", settings.WakeToRun)
 }
@@ -620,8 +620,8 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 		repetitionObj := oleutil.MustGetProperty(triggerObj, "Repetition").ToIDispatch()
 		defer repetitionObj.Release()
-		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetRepitionDuration())
-		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetRepitionInterval())
+		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetRepetitionDuration())
+		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetRepetitionInterval())
 		oleutil.MustPutProperty(repetitionObj, "StopAtDurationEnd", trigger.GetStopAtDurationEnd())
 
 		oleutil.MustPutProperty(triggerObj, "StartBoundary", trigger.GetStartBoundary())

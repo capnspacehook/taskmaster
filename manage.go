@@ -305,8 +305,8 @@ func (t TaskService) NewTaskDefinition() Definition {
 	newDef.Settings.RestartCount = 0
 	newDef.Settings.RestartOnIdle = false
 	newDef.Settings.RunOnlyIfIdle = false
-	newDef.Settings.RunOnlyIfNetworkAvalible = false
-	newDef.Settings.StartWhenAvalible = false
+	newDef.Settings.RunOnlyIfNetworkAvailable = false
+	newDef.Settings.StartWhenAvailable = false
 	newDef.Settings.StopIfGoingOnBatteries = true
 	newDef.Settings.StopOnIdleEnd = true
 	newDef.Settings.TimeLimit = "PT72H"

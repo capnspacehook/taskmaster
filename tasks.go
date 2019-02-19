@@ -41,7 +41,7 @@ func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 	})
 }
 
-func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -53,9 +53,9 @@ func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -65,7 +65,7 @@ func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary
 	})
 }
 
-func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -78,9 +78,9 @@ func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id st
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -90,7 +90,7 @@ func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id st
 	})
 }
 
-func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries map[string]string, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries map[string]string, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -104,9 +104,9 @@ func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries ma
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -116,7 +116,7 @@ func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries ma
 	})
 }
 
-func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -127,9 +127,9 @@ func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.T
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -139,7 +139,7 @@ func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.T
 	})
 }
 
-func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -152,9 +152,9 @@ func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, en
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -164,7 +164,7 @@ func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, en
 	})
 }
 
-func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -180,9 +180,9 @@ func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, month
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -192,7 +192,7 @@ func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, month
 	})
 }
 
-func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) error {
+func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) error {
 	monthDay, err := IntToDayOfMonth(dayOfMonth)
 	if err != nil {
 		return err
@@ -210,9 +210,9 @@ func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, random
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -224,7 +224,7 @@ func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, random
 	return nil
 }
 
-func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -236,9 +236,9 @@ func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, end
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -248,7 +248,7 @@ func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, end
 	})
 }
 
-func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange TaskSessionStateChangeType, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange TaskSessionStateChangeType, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -262,9 +262,9 @@ func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange Tas
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -274,7 +274,7 @@ func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange Tas
 	})
 }
 
-func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -286,9 +286,9 @@ func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBo
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -298,7 +298,7 @@ func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBo
 	})
 }
 
-func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repitionDuration, repitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -312,9 +312,9 @@ func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, 
 			ExecutionTimeLimit: timeLimit,
 			ID:                 id,
 			RepetitionPattern: RepetitionPattern{
-				RepitionDuration:  repitionDuration,
-				RepitionInterval:  repitionInterval,
-				StopAtDurationEnd: stopAtDurationEnd,
+				RepetitionDuration: repetitionDuration,
+				RepetitionInterval: repetitionInterval,
+				StopAtDurationEnd:  stopAtDurationEnd,
 			},
 			StartBoundary: startBoundaryStr,
 			taskTriggerTypeHolder: taskTriggerTypeHolder{
@@ -324,7 +324,7 @@ func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, 
 	})
 }
 
-// Refresh refreshes alll of the local instance variables of the running task.
+// Refresh refreshes all of the local instance variables of the running task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-irunningtask-refresh
 func (r RunningTask) Refresh() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Refresh")
