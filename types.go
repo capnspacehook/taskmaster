@@ -6,7 +6,7 @@ import (
 	"github.com/go-ole/go-ole"
 )
 
-// Day is a day of the week
+// Day is a day of the week.
 type Day int
 
 const (
@@ -19,7 +19,7 @@ const (
 	Saturday  Day = 0x40
 )
 
-// DayInterval specifies if a task runs every day or every other day
+// DayInterval specifies if a task runs every day or every other day.
 type DayInterval int
 
 const (
@@ -27,14 +27,14 @@ const (
 	EveryOtherDay DayInterval = 2
 )
 
-// DayOfMonth is a day of a month
+// DayOfMonth is a day of a month.
 type DayOfMonth int
 
 const (
 	LastDayOfMonth = 32
 )
 
-// Month is one of the 12 months
+// Month is one of the 12 months.
 type Month int
 
 const (
@@ -52,7 +52,7 @@ const (
 	December  Month = 0x800
 )
 
-// Week specifies what week of the month a task will run on
+// Week specifies what week of the month a task will run on.
 type Week int
 
 const (
@@ -63,7 +63,7 @@ const (
 	Last   Week = 0x10
 )
 
-// WeekInterval specifies if a task runs every week or every other week
+// WeekInterval specifies if a task runs every week or every other week.
 type WeekInterval int
 
 const (
@@ -71,7 +71,7 @@ const (
 	EveryOtherWeek WeekInterval = 2
 )
 
-// TaskActionType specifies the type of a task action
+// TaskActionType specifies the type of a task action.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_action_type
 type TaskActionType int
 
@@ -82,7 +82,7 @@ const (
 	TASK_ACTION_SHOW_MESSAGE TaskActionType = 7
 )
 
-// TaskCompatibility specifies the compatibility of a registered task
+// TaskCompatibility specifies the compatibility of a registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_compatibility
 type TaskCompatibility int
 
@@ -96,7 +96,7 @@ const (
 	TASK_COMPATIBILITY_V2_4
 )
 
-// TaskCreationFlags specifies how a task will be created
+// TaskCreationFlags specifies how a task will be created.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_creation
 type TaskCreationFlags int
 
@@ -110,7 +110,7 @@ const (
 	TASK_IGNORE_REGISTRATION_TRIGGERS TaskCreationFlags = 0x20
 )
 
-// TaskEnumFlags specifies how tasks will be enumerated
+// TaskEnumFlags specifies how tasks will be enumerated.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_enum_flags
 type TaskEnumFlags int
 
@@ -119,7 +119,7 @@ const (
 )
 
 // TaskInstancesPolicy specifies what the Task Scheduler service will do when
-// multiple instances of a task are triggered or operating at once
+// multiple instances of a task are triggered or operating at once.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_instances_policy
 type TaskInstancesPolicy int
 
@@ -130,7 +130,7 @@ const (
 	TASK_INSTANCES_STOP_EXISTING                            // stop an existing instance of the task before it starts a new instance
 )
 
-// TaskLogonType specifies how a registered task will authenticate when it executes
+// TaskLogonType specifies how a registered task will authenticate when it executes.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_logon_type
 type TaskLogonType int
 
@@ -144,7 +144,7 @@ const (
 	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD                      // first use the interactive token. If the user is not logged on (no interactive token is available), then the password is used. The password must be specified when a task is registered. This flag is not recommended for new tasks because it is less reliable than TASK_LOGON_PASSWORD
 )
 
-// TaskRunFlags specifies how a task will be executed
+// TaskRunFlags specifies how a task will be executed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_run_flags
 type TaskRunFlags int
 
@@ -156,7 +156,7 @@ const (
 	TASK_RUN_USER_SID           TaskRunFlags = 8 // the task is run using a security identifier
 )
 
-// TaskRunLevel specifies whether the task will be run with full permissions or not
+// TaskRunLevel specifies whether the task will be run with full permissions or not.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_runlevel_type
 type TaskRunLevel int
 
@@ -166,7 +166,7 @@ const (
 )
 
 // TaskSessionStateChangeType specifies the type of session state change that a
-// SessionStateChange trigger will trigger on
+// SessionStateChange trigger will trigger on.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_session_state_change_type
 type TaskSessionStateChangeType int
 
@@ -179,7 +179,7 @@ const (
 	TASK_SESSION_UNLOCK                                       // Terminal Server session unlocked state change. For example, this state change causes the task to run when the computer is unlocked
 )
 
-// TaskState specifies the state of a running or registered task
+// TaskState specifies the state of a running or registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_state
 type TaskState int
 
@@ -191,7 +191,7 @@ const (
 	TASK_STATE_RUNNING                   // one or more instances of the task is running
 )
 
-// TaskTriggerType specifies the type of a task trigger
+// TaskTriggerType specifies the type of a task trigger.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_trigger_type2
 type TaskTriggerType int
 
@@ -235,38 +235,44 @@ type TaskFolder struct {
 	RegisteredTasks []*RegisteredTask
 }
 
+// RunningTask is a task that is currently running.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irunningtask
 type RunningTask struct {
 	taskObj       *ole.IDispatch
-	CurrentAction string
-	EnginePID     int
-	InstanceGUID  string
-	Name          string
-	Path          string
-	State         TaskState
+	CurrentAction string    // the name of the current action that the running task is performing
+	EnginePID     int       // the process ID for the engine (process) which is running the task
+	InstanceGUID  string    // the GUID identifier for this instance of the task
+	Name          string    // the name of the task
+	Path          string    // the path to where the task is stored
+	State         TaskState // an identifier for the state of the running task
 }
 
+// RegisteredTask is a task that is registered in the Task Scheduler database.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregisteredtask
 type RegisteredTask struct {
 	taskObj        *ole.IDispatch
-	Name           string
-	Path           string
+	Name           string // the name of the registered task
+	Path           string // the path to where the registered task is stored
 	Definition     Definition
 	Enabled        bool
-	State          TaskState
-	MissedRuns     int
-	NextRunTime    time.Time
-	LastRunTime    time.Time
-	LastTaskResult int
+	State          TaskState // the operational state of the registered task
+	MissedRuns     int       // the number of times the registered task has missed a scheduled run
+	NextRunTime    time.Time // the time when the registered task is next scheduled to run
+	LastRunTime    time.Time // the time the registered task was last run
+	LastTaskResult int       // the results that were returned the last time the registered task was run
 }
 
+// Definition defines all the components of a task, such as the task settings, triggers, actions, and registration information
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itaskdefinition
 type Definition struct {
 	Actions          []Action
-	Context          string
-	Data             string
+	Context          string // specifies the security context under which the actions of the task are performed
+	Data             string // the data that is associated with the task
 	Principal        Principal
 	RegistrationInfo RegistrationInfo
 	Settings         TaskSettings
 	Triggers         []Trigger
-	XMLText          string
+	XMLText          string // the XML-formatted definition of the task
 }
 
 type Action interface {
@@ -283,7 +289,7 @@ type TaskAction struct {
 	taskActionTypeHolder
 }
 
-// ExecAction is an action that performs a command-line operation
+// ExecAction is an action that performs a command-line operation.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iexecaction
 type ExecAction struct {
 	TaskAction
@@ -292,7 +298,7 @@ type ExecAction struct {
 	WorkingDir string
 }
 
-// ComHandlerAction is an action that fires a COM handler. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// ComHandlerAction is an action that fires a COM handler. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-icomhandleraction
 type ComHandlerAction struct {
 	TaskAction
@@ -300,7 +306,7 @@ type ComHandlerAction struct {
 	Data    string
 }
 
-// EmailAction is an action that sends email message. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// EmailAction is an action that sends email message. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iemailaction
 type EmailAction struct {
 	TaskAction
@@ -314,7 +320,7 @@ type EmailAction struct {
 	From    string
 }
 
-// MessageAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set
+// MessageAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ishowmessageaction
 type MessageAction struct {
 	TaskAction
@@ -322,15 +328,19 @@ type MessageAction struct {
 	Message string
 }
 
+// Principal provides security credentials that define the security context for the tasks that are associated with it.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iprincipal
 type Principal struct {
-	Name      string
-	GroupID   string
-	ID        string
-	LogonType TaskLogonType
-	RunLevel  TaskRunLevel
-	UserID    string
+	Name      string        // the name of the principal
+	GroupID   string        // the identifier of the user group that is required to run the tasks
+	ID        string        // the identifier of the principal
+	LogonType TaskLogonType // the security logon method that is required to run the tasks
+	RunLevel  TaskRunLevel  // the identifier that is used to specify the privilege level that is required to run the tasks
+	UserID    string        // the user identifier that is required to run the tasks
 }
 
+// RegistrationInfo provides the administrative information that can be used to describe the task
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregistrationinfo
 type RegistrationInfo struct {
 	Author             string
 	Date               string
@@ -342,38 +352,44 @@ type RegistrationInfo struct {
 	Version            string
 }
 
+// TaskSettings provides the settings that the Task Scheduler service uses to perform the task
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itasksettings
 type TaskSettings struct {
-	AllowDemandStart       bool
-	AllowHardTerminate     bool
-	Compatibility          TaskCompatibility
-	DeleteExpiredTaskAfter string
-	DontStartOnBatteries   bool
-	Enabled                bool
-	TimeLimit              string
-	Hidden                 bool
+	AllowDemandStart       bool              // indicates that the task can be started by using either the Run command or the Context menu
+	AllowHardTerminate     bool              // indicates that the task may be terminated by the Task Scheduler service using TerminateProcess
+	Compatibility          TaskCompatibility // indicates which version of Task Scheduler a task is compatible with
+	DeleteExpiredTaskAfter string            // the amount of time that the Task Scheduler will wait before deleting the task after it expires
+	DontStartOnBatteries   bool              // indicates that the task will not be started if the computer is running on batteries
+	Enabled                bool              // indicates that the task is enabled
+	TimeLimit              string            // the amount of time that is allowed to complete the task
+	Hidden                 bool              // indicates that the task will not be visible in the UI
 	IdleSettings
-	MultipleInstances TaskInstancesPolicy
+	MultipleInstances TaskInstancesPolicy // defines how the Task Scheduler deals with multiple instances of the task
 	NetworkSettings
-	Priority                 int
-	RestartCount             int
-	RestartInterval          string
-	RunOnlyIfIdle            bool
-	RunOnlyIfNetworkAvalible bool
-	StartWhenAvalible        bool
-	StopIfGoingOnBatteries   bool
-	WakeToRun                bool
+	Priority                 int    // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Emainl, and MessageBox actions
+	RestartCount             int    // the number of times that the Task Scheduler will attempt to restart the task
+	RestartInterval          string // specifies how long the Task Scheduler will attempt to restart the task
+	RunOnlyIfIdle            bool   // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
+	RunOnlyIfNetworkAvalible bool   // indicates that the Task Scheduler will run the task only when a network is available
+	StartWhenAvalible        bool   // indicates that the Task Scheduler can start the task at any time after its scheduled time has passed
+	StopIfGoingOnBatteries   bool   // indicates that the task will be stopped if the computer is going onto batteries
+	WakeToRun                bool   // indicates that the Task Scheduler will wake the computer when it is time to run the task, and keep the computer awake until the task is completed
 }
 
+// IdleSettings specifies how the Task Scheduler performs tasks when the computer is in an idle condition.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iidlesettings
 type IdleSettings struct {
-	IdleDuration  string
-	RestartOnIdle bool
-	StopOnIdleEnd bool
-	WaitTimeout   string
+	IdleDuration  string // the amount of time that the computer must be in an idle state before the task is run
+	RestartOnIdle bool   // whether the task is restarted when the computer cycles into an idle condition more than once
+	StopOnIdleEnd bool   // indicates that the Task Scheduler will terminate the task if the idle condition ends before the task is completed
+	WaitTimeout   string // the amount of time that the Task Scheduler will wait for an idle condition to occur
 }
 
+// NetworkSettings provides the settings that the Task Scheduler service uses to obtain a network profile.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-inetworksettings
 type NetworkSettings struct {
-	ID   string
-	Name string
+	ID   string // a GUID value that identifies a network profile
+	Name string // the name of a network profile
 }
 
 type Trigger interface {
@@ -392,31 +408,34 @@ type taskTriggerTypeHolder struct {
 	triggerType TaskTriggerType
 }
 
+// TaskTrigger provides the common properties that are inherited by all trigger objects.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itrigger
 type TaskTrigger struct {
-	Enabled            bool
-	EndBoundary        string
-	ExecutionTimeLimit string
-	ID                 string
+	Enabled            bool   // indicates whether the trigger is enabled
+	EndBoundary        string // the date and time when the trigger is deactivated
+	ExecutionTimeLimit string // the maximum amount of time that the task launched by this trigger is allowed to run
+	ID                 string // the identifier for the trigger
 	RepetitionPattern
-	StartBoundary string
+	StartBoundary string // the date and time when the trigger is activated
 	taskTriggerTypeHolder
 }
 
+// RepetitionPattern defines how often the task is run and how long the repetition pattern is repeated after the task is started.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
 type RepetitionPattern struct {
-	RepitionDuration  string
-	RepitionInterval  string
-	StopAtDurationEnd bool
+	RepitionDuration  string // how long the pattern is repeated
+	RepitionInterval  string // the amount of time between each restart of the task. Required if RepetitionDuration is specified
+	StopAtDurationEnd bool   // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
 }
 
-// BootTrigger triggers the task when the computer boots
+// BootTrigger triggers the task when the computer boots.
 // https://msdn.microsoft.com/8f186ee2-8d74-426c-9173-523a335422c9
 type BootTrigger struct {
 	TaskTrigger
 	Delay string
 }
 
-// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day
+// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day.
 // https://msdn.microsoft.com/9980ddb1-9873-46d2-8dea-bfc3fd78bba8
 type DailyTrigger struct {
 	TaskTrigger
@@ -424,7 +443,7 @@ type DailyTrigger struct {
 	RandomDelay string
 }
 
-// EventTrigger triggers the task when a specific event occurs
+// EventTrigger triggers the task when a specific event occurs.
 // https://msdn.microsoft.com/23b7ecb9-d2bb-441a-8c93-126c833f99b9
 type EventTrigger struct {
 	TaskTrigger
@@ -433,13 +452,13 @@ type EventTrigger struct {
 	ValueQueries map[string]string
 }
 
-// IdleTrigger triggers the task when the computer goes into an idle state
+// IdleTrigger triggers the task when the computer goes into an idle state.
 // https://msdn.microsoft.com/aca5305f-68fc-4211-9f71-3f572340e94d
 type IdleTrigger struct {
 	TaskTrigger
 }
 
-// LogonTrigger triggers the task when a specific user logs on
+// LogonTrigger triggers the task when a specific user logs on.
 // https://msdn.microsoft.com/c0206a18-53f2-4def-8f54-2b175a0579f4
 type LogonTrigger struct {
 	TaskTrigger
@@ -447,7 +466,7 @@ type LogonTrigger struct {
 	UserID string
 }
 
-// MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year
+// MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year.
 // https://msdn.microsoft.com/a950e4a0-1fcc-4213-bdb7-d1e1cf28fe91
 type MonthlyDOWTrigger struct {
 	TaskTrigger
@@ -458,7 +477,7 @@ type MonthlyDOWTrigger struct {
 	WeekOfMonth          Week
 }
 
-// MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months
+// MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months.
 // https://msdn.microsoft.com/2ed206a6-22e0-4131-92ce-29536ad65c6c
 type MonthlyTrigger struct {
 	TaskTrigger
@@ -468,14 +487,14 @@ type MonthlyTrigger struct {
 	RunOnLastWeekOfMonth bool
 }
 
-// RegistrationTrigger triggers the task when the task is registered
+// RegistrationTrigger triggers the task when the task is registered.
 // https://msdn.microsoft.com/0862f7ac-69d6-4271-8d39-c5bd7038a95e
 type RegistrationTrigger struct {
 	TaskTrigger
 	Delay string
 }
 
-// SessionStateChangeTrigger triggers the task when a specific user session state changes
+// SessionStateChangeTrigger triggers the task when a specific user session state changes.
 // https://msdn.microsoft.com/0bf56d67-6c44-4978-93a9-7b525f2bf140
 type SessionStateChangeTrigger struct {
 	TaskTrigger
@@ -484,14 +503,14 @@ type SessionStateChangeTrigger struct {
 	UserId      string
 }
 
-// TimeTrigger triggers the task at a specific time of day
+// TimeTrigger triggers the task at a specific time of day.
 // https://msdn.microsoft.com/4ebd5470-0801-42ff-a0c2-4d1e7f7ee365
 type TimeTrigger struct {
 	TaskTrigger
 	RandomDelay string
 }
 
-// WeeklyTrigger triggers the task on a weekly schedule. For example, the task starts at 8:00 AM on a specific day every week or other week
+// WeeklyTrigger triggers the task on a weekly schedule. For example, the task starts at 8:00 AM on a specific day every week or other week.
 // https://msdn.microsoft.com/c10b050a-8319-4e21-85aa-0bceb76abaaf
 type WeeklyTrigger struct {
 	TaskTrigger

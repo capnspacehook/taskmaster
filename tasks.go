@@ -2,6 +2,7 @@ package taskmaster
 
 import (
 	"errors"
+	"github.com/go-ole/go-ole"
 	"time"
 
 	"github.com/go-ole/go-ole/oleutil"
@@ -9,7 +10,7 @@ import (
 
 // AddExecAction adds an execute action to the task definition. The args
 // parameter can have up to 32 $(ArgX) values, such as '/c $(Arg0) $(Arg1)'.
-// This will allow the arguments to be dynamically entered when the task is run
+// This will allow the arguments to be dynamically entered when the task is run.
 func (d *Definition) AddExecAction(path, args, workingDir, id string) {
 	d.Actions = append(d.Actions, ExecAction{
 		Path:       path,
@@ -26,7 +27,7 @@ func (d *Definition) AddExecAction(path, args, workingDir, id string) {
 
 // AddComHandlerAction adds a COM handler action to the task definition. The clisd
 // parameter is the CLSID of the COM object that will get instantiated when the action
-// executes, and the data parameter is the arguments passed to the COM object
+// executes, and the data parameter is the arguments passed to the COM object.
 func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 	d.Actions = append(d.Actions, ComHandlerAction{
 		ClassID: clsid,
@@ -323,10 +324,22 @@ func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, 
 	})
 }
 
-// Stop kills a running task
+// Refresh refreshes alll of the local instance variables of the running task.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-irunningtask-refresh
+func (r RunningTask) Refresh() error {
+	_, err := oleutil.CallMethod(r.taskObj, "Refresh")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Stop kills a running task.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-irunningtask-stop
 func (r *RunningTask) Stop() error {
-	stopResult := oleutil.MustCallMethod(r.taskObj, "Stop").Val
-	if stopResult != 0 {
+	_, err := oleutil.CallMethod(r.taskObj, "Stop")
+	if err != nil {
 		return errors.New("cannot stop running task; access is denied")
 	}
 
@@ -336,13 +349,14 @@ func (r *RunningTask) Stop() error {
 }
 
 // Release frees the running task COM object. Must be called before
-// program termination to avoid memory leaks
+// program termination to avoid memory leaks.
 func (r *RunningTask) Release() {
 	r.taskObj.Release()
 }
 
 // Run starts an instance of a registered task. If the task was started successfully,
-// a pointer to a running task will be returned
+// a pointer to a running task will be returned.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-runex
 func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
 	if !r.Enabled {
 		return nil, errors.New("cannot run a disabled task")
@@ -358,9 +372,34 @@ func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, u
 	return &runningTask, nil
 }
 
+// GetInstances returns all of the currently running instances of a registered task.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-getinstances
+func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
+	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
+	if err != nil {
+		return nil, err
+	}
+
+	runningTasksObj := runningTasks.ToIDispatch()
+	defer runningTasksObj.Release()
+	var parsedRunningTasks []*RunningTask
+
+	oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
+		runningTaskObj := v.ToIDispatch()
+
+		parsedRunningTask := parseRunningTask(runningTaskObj)
+		parsedRunningTasks = append(parsedRunningTasks, &parsedRunningTask)
+
+		return nil
+	})
+
+	return parsedRunningTasks, nil
+}
+
 // Stop kills all running instances of the registered task that the current
 // user has access to. If all instances were killed, Stop returns true,
-// otherwise Stop returns false
+// otherwise Stop returns false.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-stop
 func (r *RegisteredTask) Stop() bool {
 	ret, _ := oleutil.CallMethod(r.taskObj, "Stop", 0)
 	if ret.Val != 0 {
@@ -371,7 +410,7 @@ func (r *RegisteredTask) Stop() bool {
 }
 
 // Release frees the registered task COM object. Must be called before
-// program termination to avoid memory leaks
+// program termination to avoid memory leaks.
 func (r *RegisteredTask) Release() {
 	r.taskObj.Release()
 }

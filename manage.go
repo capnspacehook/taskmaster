@@ -45,7 +45,7 @@ func (t *TaskService) initialize() error {
 // has to be run before any other functions in taskmaster can be used. If  the
 // serverName parameter is empty, a connection to the local Task Scheduler service
 // will be attempted. If the user and password parameters are empty, the current
-// token will be used for authentication
+// token will be used for authentication.
 func (t *TaskService) Connect(serverName, domain, username, password string) error {
 	var err error
 
@@ -112,7 +112,7 @@ func (t *TaskService) Connect(serverName, domain, username, password string) err
 
 // Cleanup frees all the Task Scheduler COM objects that have been created.
 // If this function is not called before the parent program terminates,
-// memory leaks will occur
+// memory leaks will occur.
 func (t *TaskService) Cleanup() {
 	t.freeRunningTasks()
 	t.freeRegisteredTasks()
@@ -142,7 +142,7 @@ func (t *TaskService) freeRegisteredTasks() {
 
 // GetRunningTasks enumerates the Task Scheduler database for all currently running tasks.
 // If run multiple times, the TaskService object will be updated to contain the current running
-// tasks
+// tasks.
 func (t *TaskService) GetRunningTasks() error {
 	var err error
 
@@ -169,7 +169,7 @@ func (t *TaskService) GetRunningTasks() error {
 
 // GetRegisteredTasks enumerates the Task Scheduler database for all currently registered tasks.
 // If run multiple times, the TaskService object will be updated to contain the current registered
-// tasks
+// tasks.
 func (t *TaskService) GetRegisteredTasks() error {
 	var err error
 
@@ -262,7 +262,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 
 // GetRegisteredTask attempts to find the specified registered task and returns a
 // pointer to it if it exists. If it doesn't exist, nil will be returned in place of
-// the registered task
+// the registered task.
 func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 	taskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "GetTask", path)
 	if err != nil {
@@ -282,7 +282,7 @@ func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 }
 
 // NewTaskDefinition returns a new task definition that can be used to register a new task.
-// Task settings and properties are set to Task Scheduler default values
+// Task settings and properties are set to Task Scheduler default values.
 func (t TaskService) NewTaskDefinition() Definition {
 	newDef := Definition{}
 
@@ -317,7 +317,7 @@ func (t TaskService) NewTaskDefinition() Definition {
 
 // CreateTask creates a registered tasks on the connected computer. CreateTask returns
 // true if the task was successfully registered, and false if the overwrite parameter
-// is false and a task at the specified path already exists
+// is false and a task at the specified path already exists.
 func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (bool, error) {
 	var err error
 
@@ -355,7 +355,7 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	return true, nil
 }
 
-// UpdateTask updates a registered task
+// UpdateTask updates a registered task.
 func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) error {
 	var err error
 
@@ -416,7 +416,7 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 
 // DeleteFolder removes a task folder from the connected computer. If the deleteRecursively parameter
 // is set to true, all tasks and subfolders will be removed recursively. If it's set to false, DeleteFolder
-// will return true if the folder was empty and deleted successfully, and false otherwise
+// will return true if the folder was empty and deleted successfully, and false otherwise.
 func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, error) {
 	var err error
 
@@ -510,7 +510,7 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 	return true, nil
 }
 
-// DeleteTask removes a registered task from the connected computer
+// DeleteTask removes a registered task from the connected computer.
 func (t *TaskService) DeleteTask(path string) error {
 	var err error
 
