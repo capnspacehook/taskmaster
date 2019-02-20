@@ -1,0 +1,23 @@
+version: "1.0.{build}"
+
+os: Windows Server 2016
+
+build: off
+
+clone_folder: c:\gopath\src\github.com\capnspacehook\taskmaster
+
+stack: go 1.11
+
+environment:
+  GOPATH: c:\gopath
+  matrix:
+  - GOARCH: 386
+  - GOARCH: amd64
+
+platform:
+  - x86
+  - Any CPU
+
+test_script:
+  - cd c:\gopath\src\github.com\capnspacehook\taskmaster
+  - go test -cover
