@@ -527,8 +527,8 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 			comHandlerActionObj := actionObj.MustQueryInterface(ole.NewGUID("{6d2fd252-75c5-4f66-90ba-2a7d8cc3039f}"))
 			defer comHandlerActionObj.Release()
 
-			oleutil.MustPutProperty(actionsObj, "ClassId", comHandlerAction.ClassID)
-			oleutil.MustPutProperty(actionsObj, "Data", comHandlerAction.Data)
+			oleutil.MustPutProperty(comHandlerActionObj, "ClassId", comHandlerAction.ClassID)
+			oleutil.MustPutProperty(comHandlerActionObj, "Data", comHandlerAction.Data)
 		}
 	}
 

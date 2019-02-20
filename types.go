@@ -171,12 +171,12 @@ const (
 type TaskSessionStateChangeType int
 
 const (
-	TASK_CONSOLE_CONNECT    TaskSessionStateChangeType = iota // Terminal Server console connection state change. For example, when you connect to a user session on the local computer by switching users on the computer
-	TASK_CONSOLE_DISCONNECT                                   // Terminal Server console disconnection state change. For example, when you disconnect to a user session on the local computer by switching users on the computer
-	TASK_REMOTE_CONNECT                                       // Terminal Server remote connection state change. For example, when a user connects to a user session by using the Remote Desktop Connection program from a remote computer
-	TASK_REMOTE_DISCONNECT                                    // Terminal Server remote disconnection state change. For example, when a user disconnects from a user session while using the Remote Desktop Connection program from a remote computer
-	TASK_SESSION_LOCK                                         // Terminal Server session locked state change. For example, this state change causes the task to run when the computer is locked
-	TASK_SESSION_UNLOCK                                       // Terminal Server session unlocked state change. For example, this state change causes the task to run when the computer is unlocked
+	TASK_CONSOLE_CONNECT    TaskSessionStateChangeType = 1 // Terminal Server console connection state change. For example, when you connect to a user session on the local computer by switching users on the computer
+	TASK_CONSOLE_DISCONNECT TaskSessionStateChangeType = 2 // Terminal Server console disconnection state change. For example, when you disconnect to a user session on the local computer by switching users on the computer
+	TASK_REMOTE_CONNECT     TaskSessionStateChangeType = 3 // Terminal Server remote connection state change. For example, when a user connects to a user session by using the Remote Desktop Connection program from a remote computer
+	TASK_REMOTE_DISCONNECT  TaskSessionStateChangeType = 4 // Terminal Server remote disconnection state change. For example, when a user disconnects from a user session while using the Remote Desktop Connection program from a remote computer
+	TASK_SESSION_LOCK       TaskSessionStateChangeType = 7 // Terminal Server session locked state change. For example, this state change causes the task to run when the computer is locked
+	TASK_SESSION_UNLOCK     TaskSessionStateChangeType = 8 // Terminal Server session unlocked state change. For example, this state change causes the task to run when the computer is unlocked
 )
 
 // TaskState specifies the state of a running or registered task.
@@ -435,7 +435,7 @@ type BootTrigger struct {
 	Delay string // indicates the amount of time between when the system is booted and when the task is started
 }
 
-// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day. The time of day that the task is started is set by StartBoundary.
+// DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-idailytrigger
 type DailyTrigger struct {
 	TaskTrigger

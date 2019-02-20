@@ -386,6 +386,10 @@ func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, p
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
 	var err error
 
+	if newTaskDef.Actions == nil {
+		return nil, errors.New("task must have at least one action")
+	}
+
 	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()
 	defer newTaskDefObj.Release()
 
