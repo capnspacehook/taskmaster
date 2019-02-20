@@ -136,7 +136,7 @@ func (t *TaskService) freeRegisteredTasks() {
 	}
 
 	for _, registeredTask := range t.RegisteredTasks {
-		registeredTask.Release()
+		registeredTask.taskObj.Release()
 	}
 }
 
@@ -318,11 +318,11 @@ func (t TaskService) NewTaskDefinition() Definition {
 // CreateTask creates a registered tasks on the connected computer. CreateTask returns
 // true if the task was successfully registered, and false if the overwrite parameter
 // is false and a task at the specified path already exists.
-func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (bool, error) {
+func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (*RegisteredTask, bool, error) {
 	var err error
 
 	if path[0] != '\\' {
-		return false, errors.New("path must start with root folder '\\'")
+		return nil, false, errors.New("path must start with root folder '\\'")
 	}
 
 	nameIndex := strings.LastIndex(path, "\\")
@@ -333,7 +333,7 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	} else {
 		if t.registeredTaskExist(path) {
 			if !overwrite {
-				return false, nil
+				return nil, false, nil
 			}
 			oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
 		}
@@ -341,46 +341,46 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 
 	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_CREATE)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	newTask, _, err := parseRegisteredTask(newTaskObj)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	// TODO: update taskService with possibly new folders
 	t.RegisteredTasks[path] = &newTask
 
-	return true, nil
+	return &newTask, true, nil
 }
 
 // UpdateTask updates a registered task.
-func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) error {
+func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) (*RegisteredTask, error) {
 	var err error
 
 	if path[0] != '\\' {
-		return errors.New("path must start with root folder '\\'")
+		return nil, errors.New("path must start with root folder '\\'")
 	}
 
 	if !t.registeredTaskExist(path) {
-		return errors.New("registered task doesn't exist")
+		return nil, errors.New("registered task doesn't exist")
 	}
 
 	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_UPDATE)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// update the internal database of registered tasks
 	newTask, _, err := parseRegisteredTask(newTaskObj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	t.RegisteredTasks[path].taskObj.Release()
 	t.RegisteredTasks[path] = &newTask
 
-	return nil
+	return &newTask, nil
 }
 
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {

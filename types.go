@@ -239,6 +239,7 @@ type TaskFolder struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irunningtask
 type RunningTask struct {
 	taskObj       *ole.IDispatch
+	isReleased    bool
 	CurrentAction string    // the name of the current action that the running task is performing
 	EnginePID     int       // the process ID for the engine (process) which is running the task
 	InstanceGUID  string    // the GUID identifier for this instance of the task

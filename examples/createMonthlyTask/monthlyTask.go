@@ -23,7 +23,7 @@ func main() {
 	newTaskDef.RegistrationInfo.Author = "capnspacehook"
 	newTaskDef.RegistrationInfo.Description = "Pops calc. What else would you expect?"
 
-	_, err = taskService.CreateTask("\\NewFolder\\NewTask", newTaskDef, "", "", newTaskDef.Principal.LogonType, true)
+	_, _, err = taskService.CreateTask("\\NewFolder\\NewTask", newTaskDef, "", "", newTaskDef.Principal.LogonType, true)
 	if err != nil {
 		panic(err)
 	}
