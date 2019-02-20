@@ -1,7 +1,5 @@
 version: "1.0.{build}"
 
-os: Windows Server 2016
-
 build: off
 
 clone_folder: c:\gopath\src\github.com\capnspacehook\taskmaster
@@ -11,12 +9,17 @@ stack: go 1.11
 environment:
   GOPATH: c:\gopath
   matrix:
-  - GOARCH: 386
-  - GOARCH: amd64
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    GOARCH: 386
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    GOARCH: amd64
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    GOARCH: 386
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    GOARCH: amd64
 
 platform:
-  - x86
-  - Any CPU
+  - x64
 
 test_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
