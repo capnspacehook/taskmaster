@@ -21,7 +21,7 @@ platform:
 
 build_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
-  - go get -u -v
+  - go build -i -v
 
 test_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
