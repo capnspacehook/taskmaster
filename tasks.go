@@ -43,7 +43,11 @@ func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 	})
 }
 
-func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddBootTrigger(delay string) {
+	d.AddBootTriggerEx(delay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddBootTriggerEx(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -67,7 +71,11 @@ func (d *Definition) AddBootTrigger(delay, id string, startBoundary, endBoundary
 	})
 }
 
-func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay string, startBoundary time.Time) {
+	d.AddDailyTriggerEx(dayInterval, randomDelay, "", startBoundary, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddDailyTriggerEx(dayInterval DayInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -92,7 +100,11 @@ func (d *Definition) AddDailyTrigger(dayInterval DayInterval, randomDelay, id st
 	})
 }
 
-func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries map[string]string, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries map[string]string) {
+	d.AddEventTriggerEx(delay, subscription, valueQueries, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddEventTriggerEx(delay, subscription string, valueQueries map[string]string, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -118,7 +130,11 @@ func (d *Definition) AddEventTrigger(delay, subscription string, valueQueries ma
 	})
 }
 
-func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddIdleTrigger() {
+	d.AddIdleTriggerEx("", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddIdleTriggerEx(id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -141,7 +157,11 @@ func (d *Definition) AddIdleTrigger(id string, startBoundary, endBoundary time.T
 	})
 }
 
-func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddLogonTrigger(delay, userID string) {
+	d.AddLogonTriggerEx(delay, userID, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddLogonTriggerEx(delay, userID, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -166,7 +186,11 @@ func (d *Definition) AddLogonTrigger(delay, userID, id string, startBoundary, en
 	})
 }
 
-func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay string) {
+	d.AddMonthlyDOWTriggerEx(dayOfWeek, weekOfMonth, monthOfYear, runOnLastWeekOfMonth, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddMonthlyDOWTriggerEx(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -194,7 +218,11 @@ func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, month
 	})
 }
 
-func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) error {
+func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay string) {
+	d.AddMonthlyTriggerEx(dayOfMonth, monthOfYear, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddMonthlyTriggerEx(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) error {
 	monthDay, err := IntToDayOfMonth(dayOfMonth)
 	if err != nil {
 		return err
@@ -226,7 +254,11 @@ func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, random
 	return nil
 }
 
-func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddRegistrationTrigger(delay string) {
+	d.AddRegistrationTriggerEx(delay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddRegistrationTriggerEx(delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -250,7 +282,11 @@ func (d *Definition) AddRegistrationTrigger(delay, id string, startBoundary, end
 	})
 }
 
-func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange TaskSessionStateChangeType, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange TaskSessionStateChangeType, delay string) {
+	d.AddSessionStateChangeTriggerEx(userID, stateChange, delay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddSessionStateChangeTriggerEx(userID string, stateChange TaskSessionStateChangeType, delay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -276,7 +312,11 @@ func (d *Definition) AddSessionStateChangeTrigger(userID string, stateChange Tas
 	})
 }
 
-func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddTimeTrigger(randomDelay string, startBoundary time.Time) {
+	d.AddTimeTriggerEx(randomDelay, "", startBoundary, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddTimeTriggerEx(randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 
@@ -300,7 +340,11 @@ func (d *Definition) AddTimeTrigger(randomDelay, id string, startBoundary, endBo
 	})
 }
 
-func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
+func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay string) {
+	d.AddWeeklyTriggerEx(dayOfWeek, weekInterval, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+}
+
+func (d *Definition) AddWeeklyTriggerEx(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
 	startBoundaryStr := TimeToTaskDate(startBoundary)
 	endBoundaryStr := TimeToTaskDate(endBoundary)
 

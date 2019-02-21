@@ -48,39 +48,40 @@ func (t *TaskService) initialize() error {
 // serverName parameter is empty, a connection to the local Task Scheduler service
 // will be attempted. If the user and password parameters are empty, the current
 // token will be used for authentication.
-func (t *TaskService) Connect(serverName, domain, username, password string) error {
+func Connect(serverName, domain, username, password string) (*TaskService, error) {
 	var err error
+	var taskService TaskService
 
-	if !t.isInitialized {
-		err = t.initialize()
+	if !taskService.isInitialized {
+		err = taskService.initialize()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	_, err = oleutil.CallMethod(t.taskServiceObj, "Connect", serverName, username, domain, password)
+	_, err = oleutil.CallMethod(taskService.taskServiceObj, "Connect", serverName, username, domain, password)
 	if err != nil {
 		errCode := err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
 		switch errCode {
 		case 0x80070005:
-			return errors.New("access is denied to connect to the Task Scheduler service")
+			return nil, errors.New("access is denied to connect to the Task Scheduler service")
 		case 0x80041315:
-			return errors.New("the Task Scheduler service is not running")
+			return nil, errors.New("the Task Scheduler service is not running")
 		case 0x8007000e:
-			return errors.New("the application does not have enough memory to complete the operation")
+			return nil, errors.New("the application does not have enough memory to complete the operation")
 		case 53:
-			return errors.New("cannot connect to target computer")
+			return nil, errors.New("cannot connect to target computer")
 		case 50:
-			return errors.New("cannot connect to the XP or server 2003 computer")
+			return nil, errors.New("cannot connect to the XP or server 2003 computer")
 		default:
-			return err
+			return nil, err
 		}
 	}
 
 	if serverName == "" {
 		serverName, err = os.Hostname()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if domain == "" {
@@ -89,15 +90,15 @@ func (t *TaskService) Connect(serverName, domain, username, password string) err
 	if username == "" {
 		currentUser, err := user.Current()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		username = strings.Split(currentUser.Username, "\\")[1]
 	}
-	t.connectedDomain = domain
-	t.connectedComputerName = serverName
-	t.connectedUser = username
+	taskService.connectedDomain = domain
+	taskService.connectedComputerName = serverName
+	taskService.connectedUser = username
 
-	rootFolderObj := oleutil.MustCallMethod(t.taskServiceObj, "GetFolder", "\\").ToIDispatch()
+	rootFolderObj := oleutil.MustCallMethod(taskService.taskServiceObj, "GetFolder", "\\").ToIDispatch()
 	rootFolder := RootFolder{
 		folderObj: rootFolderObj,
 		TaskFolder: TaskFolder{
@@ -105,11 +106,11 @@ func (t *TaskService) Connect(serverName, domain, username, password string) err
 			Path: "\\",
 		},
 	}
-	t.RootFolder = rootFolder
+	taskService.RootFolder = rootFolder
 
-	t.isConnected = true
+	taskService.isConnected = true
 
-	return nil
+	return &taskService, nil
 }
 
 // Cleanup frees all the Task Scheduler COM objects that have been created.
@@ -317,10 +318,14 @@ func (t TaskService) NewTaskDefinition() Definition {
 	return newDef
 }
 
+func (t *TaskService) CreateTask(path string, newTaskDef Definition, overwrite bool) (*RegisteredTask, bool, error) {
+	return t.CreateTaskEx(path, newTaskDef, "", "", newTaskDef.Principal.LogonType, overwrite)
+}
+
 // CreateTask creates a registered tasks on the connected computer. CreateTask returns
 // true if the task was successfully registered, and false if the overwrite parameter
 // is false and a task at the specified path already exists.
-func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (*RegisteredTask, bool, error) {
+func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (*RegisteredTask, bool, error) {
 	var err error
 
 	if path[0] != '\\' {
@@ -357,8 +362,12 @@ func (t *TaskService) CreateTask(path string, newTaskDef Definition, username, p
 	return &newTask, true, nil
 }
 
+func (t *TaskService) UpdateTask(path string, newTaskDef Definition) (*RegisteredTask, error) {
+	return t.UpdateTaskEx(path, newTaskDef, "", "", newTaskDef.Principal.LogonType)
+}
+
 // UpdateTask updates a registered task.
-func (t *TaskService) UpdateTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) (*RegisteredTask, error) {
+func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) (*RegisteredTask, error) {
 	var err error
 
 	if path[0] != '\\' {
