@@ -186,8 +186,8 @@ func (d *Definition) AddLogonTriggerEx(delay, userID, id string, startBoundary, 
 	})
 }
 
-func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay string) {
-	d.AddMonthlyDOWTriggerEx(dayOfWeek, weekOfMonth, monthOfYear, runOnLastWeekOfMonth, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+func (d *Definition) AddMonthlyDOWTrigger(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay string, startBoundary time.Time) {
+	d.AddMonthlyDOWTriggerEx(dayOfWeek, weekOfMonth, monthOfYear, runOnLastWeekOfMonth, randomDelay, "", startBoundary, time.Time{}, "", "", "", false, true)
 }
 
 func (d *Definition) AddMonthlyDOWTriggerEx(dayOfWeek Day, weekOfMonth Week, monthOfYear Month, runOnLastWeekOfMonth bool, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {
@@ -218,8 +218,8 @@ func (d *Definition) AddMonthlyDOWTriggerEx(dayOfWeek Day, weekOfMonth Week, mon
 	})
 }
 
-func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay string) {
-	d.AddMonthlyTriggerEx(dayOfMonth, monthOfYear, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+func (d *Definition) AddMonthlyTrigger(dayOfMonth int, monthOfYear Month, randomDelay string, startBoundary time.Time) {
+	d.AddMonthlyTriggerEx(dayOfMonth, monthOfYear, randomDelay, "", startBoundary, time.Time{}, "", "", "", false, true)
 }
 
 func (d *Definition) AddMonthlyTriggerEx(dayOfMonth int, monthOfYear Month, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) error {
@@ -340,8 +340,8 @@ func (d *Definition) AddTimeTriggerEx(randomDelay, id string, startBoundary, end
 	})
 }
 
-func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay string) {
-	d.AddWeeklyTriggerEx(dayOfWeek, weekInterval, randomDelay, "", time.Time{}, time.Time{}, "", "", "", false, true)
+func (d *Definition) AddWeeklyTrigger(dayOfWeek Day, weekInterval WeekInterval, randomDelay string, startBoundary time.Time) {
+	d.AddWeeklyTriggerEx(dayOfWeek, weekInterval, randomDelay, "", startBoundary, time.Time{}, "", "", "", false, true)
 }
 
 func (d *Definition) AddWeeklyTriggerEx(dayOfWeek Day, weekInterval WeekInterval, randomDelay, id string, startBoundary, endBoundary time.Time, timeLimit, repetitionDuration, repetitionInterval string, stopAtDurationEnd, enabled bool) {

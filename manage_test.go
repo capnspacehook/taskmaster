@@ -9,8 +9,7 @@ import (
 )
 
 func TestLocalConnect(t *testing.T) {
-	var taskService TaskService
-	err := taskService.Connect("", "", "", "")
+	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,8 +18,7 @@ func TestLocalConnect(t *testing.T) {
 
 func TestCreateTask(t *testing.T) {
 	var err error
-	var taskService TaskService
-	err = taskService.Connect("", "", "", "")
+	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -31,7 +29,7 @@ func TestCreateTask(t *testing.T) {
 	execTaskDef.AddExecAction("calc.exe", "", "", "")
 	//newTaskDef.AddTimeTrigger("", "", time.Now().Add(5*time.Second), time.Time{}, "", "", "", false, true)
 
-	_, _, err = taskService.CreateTask("\\Taskmaster\\ExecAction", execTaskDef, "", "", execTaskDef.Principal.LogonType, true)
+	_, _, err = taskService.CreateTask("\\Taskmaster\\ExecAction", execTaskDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -40,7 +38,7 @@ func TestCreateTask(t *testing.T) {
 	comHandlerDef := taskService.NewTaskDefinition()
 	comHandlerDef.AddComHandlerAction("{F0001111-0000-0000-0000-0000FEEDACDC}", "", "")
 
-	_, _, err = taskService.CreateTask("\\Taskmaster\\ComHandlerAction", comHandlerDef, "", "", comHandlerDef.Principal.LogonType, true)
+	_, _, err = taskService.CreateTask("\\Taskmaster\\ComHandlerAction", comHandlerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -48,8 +46,8 @@ func TestCreateTask(t *testing.T) {
 	// test BootTrigger
 	bootTriggerDef := taskService.NewTaskDefinition()
 	bootTriggerDef.AddExecAction("calc.exe", "", "", "")
-	bootTriggerDef.AddBootTrigger("", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\BootTrigger", bootTriggerDef, "", "", bootTriggerDef.Principal.LogonType, true)
+	bootTriggerDef.AddBootTrigger("")
+	_, _, err = taskService.CreateTask("\\Taskmaster\\BootTrigger", bootTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -57,8 +55,8 @@ func TestCreateTask(t *testing.T) {
 	// test DailyTrigger
 	dailyTriggerDef := taskService.NewTaskDefinition()
 	dailyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	dailyTriggerDef.AddDailyTrigger(EveryDay, "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\DailyTrigger", dailyTriggerDef, "", "", dailyTriggerDef.Principal.LogonType, true)
+	dailyTriggerDef.AddDailyTrigger(EveryDay, "", time.Now())
+	_, _, err = taskService.CreateTask("\\Taskmaster\\DailyTrigger", dailyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -67,8 +65,8 @@ func TestCreateTask(t *testing.T) {
 	eventTriggerDef := taskService.NewTaskDefinition()
 	eventTriggerDef.AddExecAction("calc.exe", "", "", "")
 	subscription := "<QueryList> <Query Id='1'> <Select Path='System'>*[System/Level=2]</Select></Query></QueryList>"
-	eventTriggerDef.AddEventTrigger("", subscription, nil, "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\EventTrigger", eventTriggerDef, "", "", eventTriggerDef.Principal.LogonType, true)
+	eventTriggerDef.AddEventTrigger("", subscription, nil)
+	_, _, err = taskService.CreateTask("\\Taskmaster\\EventTrigger", eventTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -76,8 +74,8 @@ func TestCreateTask(t *testing.T) {
 	// test IdleTrigger
 	idleTriggerDef := taskService.NewTaskDefinition()
 	idleTriggerDef.AddExecAction("calc.exe", "", "", "")
-	idleTriggerDef.AddIdleTrigger("", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\IdleTrigger", idleTriggerDef, "", "", idleTriggerDef.Principal.LogonType, true)
+	idleTriggerDef.AddIdleTrigger()
+	_, _, err = taskService.CreateTask("\\Taskmaster\\IdleTrigger", idleTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -85,8 +83,8 @@ func TestCreateTask(t *testing.T) {
 	// test LogonTrigger
 	logonTriggerDef := taskService.NewTaskDefinition()
 	logonTriggerDef.AddExecAction("calc.exe", "", "", "")
-	logonTriggerDef.AddLogonTrigger("", "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\LogonTrigger", logonTriggerDef, "", "", logonTriggerDef.Principal.LogonType, true)
+	logonTriggerDef.AddLogonTrigger("", "")
+	_, _, err = taskService.CreateTask("\\Taskmaster\\LogonTrigger", logonTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -94,8 +92,8 @@ func TestCreateTask(t *testing.T) {
 	// test MonthlyDOWTrigger
 	monthlyDOWTriggerDef := taskService.NewTaskDefinition()
 	monthlyDOWTriggerDef.AddExecAction("calc.exe", "", "", "")
-	monthlyDOWTriggerDef.AddMonthlyDOWTrigger(Monday|Friday, First, January|February, false, "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyDOWTrigger", monthlyDOWTriggerDef, "", "", monthlyDOWTriggerDef.Principal.LogonType, true)
+	monthlyDOWTriggerDef.AddMonthlyDOWTrigger(Monday|Friday, First, January|February, false, "", time.Now())
+	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyDOWTrigger", monthlyDOWTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -103,8 +101,8 @@ func TestCreateTask(t *testing.T) {
 	// test MonthlyTrigger
 	monthlyTriggerDef := taskService.NewTaskDefinition()
 	monthlyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	monthlyTriggerDef.AddMonthlyTrigger(3, February|March, "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyTrigger", monthlyTriggerDef, "", "", monthlyTriggerDef.Principal.LogonType, true)
+	monthlyTriggerDef.AddMonthlyTrigger(3, February|March, "", time.Now())
+	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyTrigger", monthlyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -112,8 +110,8 @@ func TestCreateTask(t *testing.T) {
 	// test RegistrationTrigger
 	registrationTriggerDef := taskService.NewTaskDefinition()
 	registrationTriggerDef.AddExecAction("calc.exe", "", "", "")
-	registrationTriggerDef.AddRegistrationTrigger("", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\RegistrationTrigger", registrationTriggerDef, "", "", registrationTriggerDef.Principal.LogonType, true)
+	registrationTriggerDef.AddRegistrationTrigger("")
+	_, _, err = taskService.CreateTask("\\Taskmaster\\RegistrationTrigger", registrationTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -121,8 +119,8 @@ func TestCreateTask(t *testing.T) {
 	// test SessionStateChangeTrigger
 	sessionStateChangeTriggerDef := taskService.NewTaskDefinition()
 	sessionStateChangeTriggerDef.AddExecAction("calc.exe", "", "", "")
-	sessionStateChangeTriggerDef.AddSessionStateChangeTrigger("", TASK_SESSION_LOCK, "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\SessionStateChangeTrigger", sessionStateChangeTriggerDef, "", "", sessionStateChangeTriggerDef.Principal.LogonType, true)
+	sessionStateChangeTriggerDef.AddSessionStateChangeTrigger("", TASK_SESSION_LOCK, "")
+	_, _, err = taskService.CreateTask("\\Taskmaster\\SessionStateChangeTrigger", sessionStateChangeTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -130,8 +128,8 @@ func TestCreateTask(t *testing.T) {
 	// test TimeTrigger
 	timeTriggerDef := taskService.NewTaskDefinition()
 	timeTriggerDef.AddExecAction("calc.exe", "", "", "")
-	timeTriggerDef.AddTimeTrigger("", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\TimeTrigger", timeTriggerDef, "", "", timeTriggerDef.Principal.LogonType, true)
+	timeTriggerDef.AddTimeTrigger("", time.Now())
+	_, _, err = taskService.CreateTask("\\Taskmaster\\TimeTrigger", timeTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -139,14 +137,14 @@ func TestCreateTask(t *testing.T) {
 	// test WeeklyTrigger
 	weeklyTriggerDef := taskService.NewTaskDefinition()
 	weeklyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	weeklyTriggerDef.AddWeeklyTrigger(Tuesday|Thursday, EveryOtherWeek, "", "", time.Now(), time.Time{}, "", "", "", false, true)
-	_, _, err = taskService.CreateTask("\\Taskmaster\\WeeklyTrigger", weeklyTriggerDef, "", "", weeklyTriggerDef.Principal.LogonType, true)
+	weeklyTriggerDef.AddWeeklyTrigger(Tuesday|Thursday, EveryOtherWeek, "", time.Now())
+	_, _, err = taskService.CreateTask("\\Taskmaster\\WeeklyTrigger", weeklyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// test trying to create task where a task at the same path already exists and the 'overwrite' is set to false
-	_, taskCreated, err := taskService.CreateTask("\\Taskmaster\\WeeklyTrigger", timeTriggerDef, "", "", timeTriggerDef.Principal.LogonType, false)
+	_, taskCreated, err := taskService.CreateTask("\\Taskmaster\\TimeTrigger", timeTriggerDef, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -157,8 +155,7 @@ func TestCreateTask(t *testing.T) {
 
 func TestUpdateTask(t *testing.T) {
 	var err error
-	var taskService TaskService
-	err = taskService.Connect("", "", "", "")
+	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -174,7 +171,7 @@ func TestUpdateTask(t *testing.T) {
 	}
 
 	task.Definition.RegistrationInfo.Author = "Big Chungus"
-	_, err = taskService.UpdateTask("\\Taskmaster\\WeeklyTrigger", task.Definition, "", "", task.Definition.Principal.LogonType)
+	_, err = taskService.UpdateTask("\\Taskmaster\\WeeklyTrigger", task.Definition)
 	if err != nil {
 		t.Error(err)
 	}
@@ -193,8 +190,7 @@ func TestUpdateTask(t *testing.T) {
 
 func TestDeleteTask(t *testing.T) {
 	var err error
-	var taskService TaskService
-	err = taskService.Connect("", "", "", "")
+	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -216,8 +212,7 @@ func TestDeleteTask(t *testing.T) {
 
 func TestDeleteFolder(t *testing.T) {
 	var err error
-	var taskService TaskService
-	err = taskService.Connect("", "", "", "")
+	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}

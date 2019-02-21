@@ -469,7 +469,7 @@ type LogonTrigger struct {
 	UserID string // the identifier of the user. If left empty, the trigger will fire when any user logs on
 }
 
-// MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year.
+// MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlydowtrigger
 type MonthlyDOWTrigger struct {
 	TaskTrigger
@@ -481,6 +481,7 @@ type MonthlyDOWTrigger struct {
 }
 
 // MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months.
+// The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlytrigger
 type MonthlyTrigger struct {
 	TaskTrigger
@@ -513,7 +514,7 @@ type TimeTrigger struct {
 	RandomDelay string // a delay time that is randomly added to the start time of the trigger
 }
 
-// WeeklyTrigger triggers the task on a weekly schedule.
+// WeeklyTrigger triggers the task on a weekly schedule. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iweeklytrigger
 type WeeklyTrigger struct {
 	TaskTrigger
