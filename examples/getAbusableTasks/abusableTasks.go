@@ -10,9 +10,8 @@ import (
 
 func main() {
 	var err error
-	var taskService taskmaster.TaskService
 
-	err = taskService.Connect("", "", "", "")
+	taskService, err := taskmaster.Connect("", "", "", "")
 	if err != nil {
 		panic(err)
 	}

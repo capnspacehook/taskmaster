@@ -3,16 +3,13 @@
 package main
 
 import (
-	"time"
-
 	"github.com/capnspacehook/taskmaster"
 )
 
 func main() {
 	var err error
-	var taskService taskmaster.TaskService
 
-	err = taskService.Connect("", "", "", "")
+	taskService, err := taskmaster.Connect("", "", "", "")
 	if err != nil {
 		panic(err)
 	}
@@ -21,12 +18,12 @@ func main() {
 	newTaskDef := taskService.NewTaskDefinition()
 
 	newTaskDef.AddExecAction("cmd.exe", "/c echo Hi l33t h4x0r; timeout 5", "", "Launch CMD")
-	newTaskDef.AddSessionStateChangeTrigger("", taskmaster.TASK_SESSION_LOCK, "PT5S", "", time.Time{}, time.Time{}, "", "", "", false, true)
+	newTaskDef.AddSessionStateChangeTrigger("", taskmaster.TASK_SESSION_LOCK, "PT5S")
 	newTaskDef.Principal.RunLevel = taskmaster.TASK_RUNLEVEL_HIGHEST
 	newTaskDef.RegistrationInfo.Author = "capnspacehook"
 	newTaskDef.RegistrationInfo.Description = "CMD greets you when you logon :)"
 
-	_, _, err = taskService.CreateTask("\\NewFolder\\Greeter", newTaskDef, "", "", newTaskDef.Principal.LogonType, true)
+	_, _, err = taskService.CreateTask("\\NewFolder\\Greeter", newTaskDef, true)
 	if err != nil {
 		panic(err)
 	}

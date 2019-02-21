@@ -403,10 +403,14 @@ func (r *RunningTask) Release() {
 	}
 }
 
-// Run starts an instance of a registered task. If the task was started successfully,
+func (r *RegisteredTask) Run(args []string) (*RunningTask, error) {
+	return r.RunEx(args, TASK_RUN_AS_SELF, 0, "")
+}
+
+// RunEx starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-runex
-func (r *RegisteredTask) Run(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
+func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
 	if !r.Enabled {
 		return nil, errors.New("cannot run a disabled task")
 	}

@@ -8,9 +8,8 @@ import (
 
 func main() {
 	var err error
-	var taskService taskmaster.TaskService
 
-	err = taskService.Connect("", "", "", "")
+	taskService, err := taskmaster.Connect("", "", "", "")
 	if err != nil {
 		panic(err)
 	}
@@ -22,6 +21,10 @@ func main() {
 	}
 
 	if task != nil {
-		task.Run([]string{"/c", "timeout 69"}, taskmaster.TASK_RUN_AS_SELF, 0, "")
+		runningTask, err := task.Run(nil)
+		if err != nil {
+			panic(err)
+		}
+		defer runningTask.Release()
 	}
 }
