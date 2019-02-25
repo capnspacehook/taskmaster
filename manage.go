@@ -69,7 +69,7 @@ func Connect(serverName, domain, username, password string) (*TaskService, error
 			return nil, errors.New("the Task Scheduler service is not running")
 		case 0x8007000e:
 			return nil, errors.New("the application does not have enough memory to complete the operation")
-		case 53:
+		case 0x80070032, 53:
 			return nil, errors.New("cannot connect to target computer")
 		case 50:
 			return nil, errors.New("cannot connect to the XP or server 2003 computer")
@@ -388,7 +388,9 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 	if err != nil {
 		return nil, err
 	}
-	t.RegisteredTasks[path].taskObj.Release()
+	if updatedTask, ok := t.RegisteredTasks[path]; ok {
+		updatedTask.taskObj.Release()
+	}
 	t.RegisteredTasks[path] = &newTask
 
 	return &newTask, nil
