@@ -291,7 +291,6 @@ func (t TaskService) NewTaskDefinition() Definition {
 
 	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
 	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
-	newDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
 
 	newDef.RegistrationInfo.Date = TimeToTaskDate(time.Now())
 
@@ -401,6 +400,15 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 
 	if newTaskDef.Actions == nil {
 		return nil, errors.New("task must have at least one action")
+	}
+
+	if newTaskDef.Principal.UserID != "" && newTaskDef.Principal.GroupID != "" {
+		return nil, errors.New("both UserId and GroupId are defined for the principal; they are mutually exclusive")
+	}
+
+	// set default UserID if UserID and GroupID both aren't set
+	if newTaskDef.Principal.UserID == "" && newTaskDef.Principal.GroupID == "" {
+		newTaskDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
 	}
 
 	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()

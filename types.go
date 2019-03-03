@@ -527,6 +527,58 @@ type CustomTrigger struct {
 	TaskTrigger
 }
 
+func (t TaskLogonType) String() string {
+	switch t {
+	case TASK_LOGON_NONE:
+		return "none"
+	case TASK_LOGON_PASSWORD:
+		return "password"
+	case TASK_LOGON_S4U:
+		return "s4u"
+	case TASK_LOGON_INTERACTIVE_TOKEN:
+		return "interactive token"
+	case TASK_LOGON_GROUP:
+		return "group"
+	case TASK_LOGON_SERVICE_ACCOUNT:
+		return "service account"
+	case TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD:
+		return "interactive token or password"
+	default:
+		return ""
+	}
+}
+
+func (t TaskTriggerType) String() string {
+	switch t {
+	case TASK_TRIGGER_EVENT:
+		return "event trigger"
+	case TASK_TRIGGER_TIME:
+		return "time trigger"
+	case TASK_TRIGGER_DAILY:
+		return "daily trigger"
+	case TASK_TRIGGER_WEEKLY:
+		return "weekly trigger"
+	case TASK_TRIGGER_MONTHLY:
+		return "monthly trigger"
+	case TASK_TRIGGER_MONTHLYDOW:
+		return "monthly day of the week trigger"
+	case TASK_TRIGGER_IDLE:
+		return "idle trigger"
+	case TASK_TRIGGER_REGISTRATION:
+		return "registration trigger"
+	case TASK_TRIGGER_BOOT:
+		return "boot trigger"
+	case TASK_TRIGGER_LOGON:
+		return "logon trigger"
+	case TASK_TRIGGER_SESSION_STATE_CHANGE:
+		return "session state change trigger"
+	case TASK_TRIGGER_CUSTOM_TRIGGER_01:
+		return "custom trigger"
+	default:
+		return ""
+	}
+}
+
 func (t TaskService) IsConnected() bool {
 	return t.isConnected
 }
