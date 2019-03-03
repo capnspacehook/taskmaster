@@ -422,7 +422,7 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 
 	runningTask := parseRunningTask(runningTaskObj.ToIDispatch())
 
-	return &runningTask, nil
+	return runningTask, nil
 }
 
 // GetInstances returns all of the currently running instances of a registered task.
@@ -441,7 +441,7 @@ func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
 		runningTaskObj := v.ToIDispatch()
 
 		parsedRunningTask := parseRunningTask(runningTaskObj)
-		parsedRunningTasks = append(parsedRunningTasks, &parsedRunningTask)
+		parsedRunningTasks = append(parsedRunningTasks, parsedRunningTask)
 
 		return nil
 	})

@@ -159,7 +159,7 @@ func (t *TaskService) GetRunningTasks() error {
 		task := v.ToIDispatch()
 
 		runningTask := parseRunningTask(task)
-		t.RunningTasks = append(t.RunningTasks, &runningTask)
+		t.RunningTasks = append(t.RunningTasks, runningTask)
 
 		return nil
 	})

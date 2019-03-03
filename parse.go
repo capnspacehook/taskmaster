@@ -10,22 +10,42 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 )
 
-func parseRunningTask(task *ole.IDispatch) RunningTask {
-	currentAction := oleutil.MustGetProperty(task, "CurrentAction").ToString()
-	enginePID := int(oleutil.MustGetProperty(task, "EnginePid").Val)
-	instanceGUID := oleutil.MustGetProperty(task, "InstanceGuid").ToString()
-	name := oleutil.MustGetProperty(task, "Name").ToString()
-	path := oleutil.MustGetProperty(task, "Path").ToString()
-	state := TaskState(oleutil.MustGetProperty(task, "State").Val)
+func parseRunningTask(task *ole.IDispatch) *RunningTask {
+	var err error
 
-	runningTask := RunningTask{
+	currentAction, err := oleutil.GetProperty(task, "CurrentAction")
+	if err != nil {
+		return nil
+	}
+	enginePID, err := oleutil.GetProperty(task, "EnginePid")
+	if err != nil {
+		return nil
+	}
+	instanceGUID, err := oleutil.GetProperty(task, "InstanceGuid")
+	if err != nil {
+		return nil
+	}
+	name, err := oleutil.GetProperty(task, "Name")
+	if err != nil {
+		return nil
+	}
+	path, err := oleutil.GetProperty(task, "Path")
+	if err != nil {
+		return nil
+	}
+	state, err := oleutil.GetProperty(task, "State")
+	if err != nil {
+		return nil
+	}
+
+	runningTask := &RunningTask{
 		taskObj:       task,
-		CurrentAction: currentAction,
-		EnginePID:     enginePID,
-		InstanceGUID:  instanceGUID,
-		Name:          name,
-		Path:          path,
-		State:         state,
+		CurrentAction: currentAction.ToString(),
+		EnginePID:     int(enginePID.Val),
+		InstanceGUID:  instanceGUID.ToString(),
+		Name:          name.ToString(),
+		Path:          path.ToString(),
+		State:         TaskState(state.Val),
 	}
 
 	return runningTask
