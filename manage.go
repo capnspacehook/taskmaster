@@ -442,6 +442,8 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 			return nil, errors.New("the task is registered, but may fail to start; batch logon privilege needs to be enabled for the task principal")
 		case 0x0004131B:
 			return nil, errors.New("the task is registered, but not all specified triggers will start the task")
+		case 0x80041330:
+			return nil, errors.New("deprecated feature used")
 		default:
 			return nil, err
 		}

@@ -324,9 +324,9 @@ type EmailAction struct {
 	From    string
 }
 
-// MessageAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
-// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ishowmessageaction
-type MessageAction struct {
+// MessageBoxAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ishowMessageBoxAction
+type MessageBoxAction struct {
 	TaskAction
 	Title   string
 	Message string

@@ -189,6 +189,22 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		}
 
 		return comHandlerAction, nil
+	case TASK_ACTION_SHOW_MESSAGE:
+		title := oleutil.MustGetProperty(action, "Title").ToString()
+		message := oleutil.MustGetProperty(action, "MessageBody").ToString()
+
+		MessageBoxAction := MessageBoxAction{
+			TaskAction: TaskAction{
+				ID: id,
+				taskActionTypeHolder: taskActionTypeHolder{
+					actionType: actionType,
+				},
+			},
+			Title:   title,
+			Message: message,
+		}
+
+		return MessageBoxAction, nil
 	default:
 		return nil, errors.New("unsupported IAction type")
 	}
@@ -615,6 +631,13 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 
 			oleutil.MustPutProperty(comHandlerActionObj, "ClassId", comHandlerAction.ClassID)
 			oleutil.MustPutProperty(comHandlerActionObj, "Data", comHandlerAction.Data)
+		case TASK_ACTION_SHOW_MESSAGE:
+			messageBoxAction := action.(MessageBoxAction)
+			messageBoxActionObj := actionObj.MustQueryInterface(ole.NewGUID("{505e9e68-af89-46b8-a30f-56162a83d537}"))
+			defer messageBoxActionObj.Release()
+
+			oleutil.MustPutProperty(messageBoxActionObj, "Title", messageBoxAction.Title)
+			oleutil.MustPutProperty(messageBoxActionObj, "MessageBody", messageBoxAction.Message)
 		}
 	}
 
