@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-ole/go-ole"
+	"github.com/rickb777/date/period"
 )
 
 // Day is a day of the week.
@@ -346,7 +347,7 @@ type Principal struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregistrationinfo
 type RegistrationInfo struct {
 	Author             string
-	Date               string
+	Date               time.Time
 	Description        string
 	Documentation      string
 	SecurityDescriptor string
@@ -364,28 +365,28 @@ type TaskSettings struct {
 	DeleteExpiredTaskAfter string            // the amount of time that the Task Scheduler will wait before deleting the task after it expires
 	DontStartOnBatteries   bool              // indicates that the task will not be started if the computer is running on batteries
 	Enabled                bool              // indicates that the task is enabled
-	TimeLimit              string            // the amount of time that is allowed to complete the task
+	TimeLimit              period.Period     // the amount of time that is allowed to complete the task
 	Hidden                 bool              // indicates that the task will not be visible in the UI
 	IdleSettings
 	MultipleInstances TaskInstancesPolicy // defines how the Task Scheduler deals with multiple instances of the task
 	NetworkSettings
-	Priority                  int    // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Email, and MessageBox actions
-	RestartCount              int    // the number of times that the Task Scheduler will attempt to restart the task
-	RestartInterval           string // specifies how long the Task Scheduler will attempt to restart the task
-	RunOnlyIfIdle             bool   // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
-	RunOnlyIfNetworkAvailable bool   // indicates that the Task Scheduler will run the task only when a network is available
-	StartWhenAvailable        bool   // indicates that the Task Scheduler can start the task at any time after its scheduled time has passed
-	StopIfGoingOnBatteries    bool   // indicates that the task will be stopped if the computer is going onto batteries
-	WakeToRun                 bool   // indicates that the Task Scheduler will wake the computer when it is time to run the task, and keep the computer awake until the task is completed
+	Priority                  int           // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Email, and MessageBox actions
+	RestartCount              int           // the number of times that the Task Scheduler will attempt to restart the task
+	RestartInterval           period.Period // specifies how long the Task Scheduler will attempt to restart the task
+	RunOnlyIfIdle             bool          // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
+	RunOnlyIfNetworkAvailable bool          // indicates that the Task Scheduler will run the task only when a network is available
+	StartWhenAvailable        bool          // indicates that the Task Scheduler can start the task at any time after its scheduled time has passed
+	StopIfGoingOnBatteries    bool          // indicates that the task will be stopped if the computer is going onto batteries
+	WakeToRun                 bool          // indicates that the Task Scheduler will wake the computer when it is time to run the task, and keep the computer awake until the task is completed
 }
 
 // IdleSettings specifies how the Task Scheduler performs tasks when the computer is in an idle condition.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iidlesettings
 type IdleSettings struct {
-	IdleDuration  string // the amount of time that the computer must be in an idle state before the task is run
-	RestartOnIdle bool   // whether the task is restarted when the computer cycles into an idle condition more than once
-	StopOnIdleEnd bool   // indicates that the Task Scheduler will terminate the task if the idle condition ends before the task is completed
-	WaitTimeout   string // the amount of time that the Task Scheduler will wait for an idle condition to occur
+	IdleDuration  period.Period // the amount of time that the computer must be in an idle state before the task is run
+	RestartOnIdle bool          // whether the task is restarted when the computer cycles into an idle condition more than once
+	StopOnIdleEnd bool          // indicates that the Task Scheduler will terminate the task if the idle condition ends before the task is completed
+	WaitTimeout   period.Period // the amount of time that the Task Scheduler will wait for an idle condition to occur
 }
 
 // NetworkSettings provides the settings that the Task Scheduler service uses to obtain a network profile.
@@ -397,12 +398,12 @@ type NetworkSettings struct {
 
 type Trigger interface {
 	GetEnabled() bool
-	GetEndBoundary() string
-	GetExecutionTimeLimit() string
+	GetEndBoundary() time.Time
+	GetExecutionTimeLimit() period.Period
 	GetID() string
-	GetRepetitionDuration() string
-	GetRepetitionInterval() string
-	GetStartBoundary() string
+	GetRepetitionDuration() period.Period
+	GetRepetitionInterval() period.Period
+	GetStartBoundary() time.Time
 	GetStopAtDurationEnd() bool
 	GetType() TaskTriggerType
 }
@@ -414,43 +415,43 @@ type taskTriggerTypeHolder struct {
 // TaskTrigger provides the common properties that are inherited by all trigger objects.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itrigger
 type TaskTrigger struct {
-	Enabled            bool   // indicates whether the trigger is enabled
-	EndBoundary        string // the date and time when the trigger is deactivated
-	ExecutionTimeLimit string // the maximum amount of time that the task launched by this trigger is allowed to run
-	ID                 string // the identifier for the trigger
+	Enabled            bool          // indicates whether the trigger is enabled
+	EndBoundary        time.Time     // the date and time when the trigger is deactivated
+	ExecutionTimeLimit period.Period // the maximum amount of time that the task launched by this trigger is allowed to run
+	ID                 string        // the identifier for the trigger
 	RepetitionPattern
-	StartBoundary string // the date and time when the trigger is activated
+	StartBoundary time.Time // the date and time when the trigger is activated
 	taskTriggerTypeHolder
 }
 
 // RepetitionPattern defines how often the task is run and how long the repetition pattern is repeated after the task is started.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
 type RepetitionPattern struct {
-	RepetitionDuration string // how long the pattern is repeated
-	RepetitionInterval string // the amount of time between each restart of the task. Required if RepetitionDuration is specified
-	StopAtDurationEnd  bool   // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
+	RepetitionDuration period.Period // how long the pattern is repeated
+	RepetitionInterval period.Period // the amount of time between each restart of the task. Required if RepetitionDuration is specified
+	StopAtDurationEnd  bool          // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
 }
 
 // BootTrigger triggers the task when the computer boots. Only Administrators can create tasks with a BootTrigger.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iboottrigger
 type BootTrigger struct {
 	TaskTrigger
-	Delay string // indicates the amount of time between when the system is booted and when the task is started
+	Delay period.Period // indicates the amount of time between when the system is booted and when the task is started
 }
 
 // DailyTrigger triggers the task on a daily schedule. For example, the task starts at a specific time every day, every other day, or every third day. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-idailytrigger
 type DailyTrigger struct {
 	TaskTrigger
-	DayInterval DayInterval // the interval between the days in the schedule
-	RandomDelay string      // a delay time that is randomly added to the start time of the trigger
+	DayInterval DayInterval   // the interval between the days in the schedule
+	RandomDelay period.Period // a delay time that is randomly added to the start time of the trigger
 }
 
 // EventTrigger triggers the task when a specific event occurs. A maximum of 500 tasks with event subscriptions can be created.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ieventtrigger
 type EventTrigger struct {
 	TaskTrigger
-	Delay        string            // indicates the amount of time between when the event occurs and when the task is started
+	Delay        period.Period     // indicates the amount of time between when the event occurs and when the task is started
 	Subscription string            // a query string that identifies the event that fires the trigger
 	ValueQueries map[string]string // a collection of named XPath queries. Each query in the collection is applied to the last matching event XML returned from the subscription query
 }
@@ -465,19 +466,19 @@ type IdleTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ilogontrigger
 type LogonTrigger struct {
 	TaskTrigger
-	Delay  string // indicates the amount of time between when the user logs on and when the task is started
-	UserID string // the identifier of the user. If left empty, the trigger will fire when any user logs on
+	Delay  period.Period // indicates the amount of time between when the user logs on and when the task is started
+	UserID string        // the identifier of the user. If left empty, the trigger will fire when any user logs on
 }
 
 // MonthlyDOWTrigger triggers the task on a monthly day-of-week schedule. For example, the task starts on a specific days of the week, weeks of the month, and months of the year. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlydowtrigger
 type MonthlyDOWTrigger struct {
 	TaskTrigger
-	DaysOfWeek           Day    // the days of the week during which the task runs
-	MonthsOfYear         Month  // the months of the year during which the task runs
-	RandomDelay          string // a delay time that is randomly added to the start time of the trigger
-	RunOnLastWeekOfMonth bool   // indicates that the task runs on the last week of the month
-	WeeksOfMonth         Week   // the weeks of the month during which the task runs
+	DaysOfWeek           Day           // the days of the week during which the task runs
+	MonthsOfYear         Month         // the months of the year during which the task runs
+	RandomDelay          period.Period // a delay time that is randomly added to the start time of the trigger
+	RunOnLastWeekOfMonth bool          // indicates that the task runs on the last week of the month
+	WeeksOfMonth         Week          // the weeks of the month during which the task runs
 }
 
 // MonthlyTrigger triggers the task on a monthly schedule. For example, the task starts on specific days of specific months.
@@ -485,24 +486,24 @@ type MonthlyDOWTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlytrigger
 type MonthlyTrigger struct {
 	TaskTrigger
-	DaysOfMonth          DayOfMonth // the days of the month during which the task runs
-	MonthsOfYear         Month      // the months of the year during which the task runs
-	RandomDelay          string     // a delay time that is randomly added to the start time of the trigger
-	RunOnLastWeekOfMonth bool       // indicates that the task runs on the last week of the month
+	DaysOfMonth          DayOfMonth    // the days of the month during which the task runs
+	MonthsOfYear         Month         // the months of the year during which the task runs
+	RandomDelay          period.Period // a delay time that is randomly added to the start time of the trigger
+	RunOnLastWeekOfMonth bool          // indicates that the task runs on the last week of the month
 }
 
 // RegistrationTrigger triggers the task when the task is registered.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregistrationtrigger
 type RegistrationTrigger struct {
 	TaskTrigger
-	Delay string // the amount of time between when the task is registered and when the task is started
+	Delay period.Period // the amount of time between when the task is registered and when the task is started
 }
 
 // SessionStateChangeTrigger triggers the task when a specific user session state changes.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-isessionstatechangetrigger
 type SessionStateChangeTrigger struct {
 	TaskTrigger
-	Delay       string                     // indicates how long of a delay takes place before a task is started after a Terminal Server session state change is detected
+	Delay       period.Period              // indicates how long of a delay takes place before a task is started after a Terminal Server session state change is detected
 	StateChange TaskSessionStateChangeType // the kind of Terminal Server session change that would trigger a task launch
 	UserId      string                     // the user for the Terminal Server session. When a session state change is detected for this user, a task is started
 }
@@ -511,16 +512,16 @@ type SessionStateChangeTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itimetrigger
 type TimeTrigger struct {
 	TaskTrigger
-	RandomDelay string // a delay time that is randomly added to the start time of the trigger
+	RandomDelay period.Period // a delay time that is randomly added to the start time of the trigger
 }
 
 // WeeklyTrigger triggers the task on a weekly schedule. The time of day that the task is started is set by StartBoundary, which must be set.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iweeklytrigger
 type WeeklyTrigger struct {
 	TaskTrigger
-	DaysOfWeek   Day          // the days of the week in which the task runs
-	RandomDelay  string       // a delay time that is randomly added to the start time of the trigger
-	WeekInterval WeekInterval // the interval between the weeks in the schedule
+	DaysOfWeek   Day           // the days of the week in which the task runs
+	RandomDelay  period.Period // a delay time that is randomly added to the start time of the trigger
+	WeekInterval WeekInterval  // the interval between the weeks in the schedule
 }
 
 type CustomTrigger struct {
@@ -607,7 +608,7 @@ func (t taskTriggerTypeHolder) GetType() TaskTriggerType {
 	return t.triggerType
 }
 
-func (t TaskTrigger) GetRepetitionDuration() string {
+func (t TaskTrigger) GetRepetitionDuration() period.Period {
 	return t.RepetitionDuration
 }
 
@@ -615,11 +616,11 @@ func (t TaskTrigger) GetEnabled() bool {
 	return t.Enabled
 }
 
-func (t TaskTrigger) GetEndBoundary() string {
+func (t TaskTrigger) GetEndBoundary() time.Time {
 	return t.EndBoundary
 }
 
-func (t TaskTrigger) GetExecutionTimeLimit() string {
+func (t TaskTrigger) GetExecutionTimeLimit() period.Period {
 	return t.ExecutionTimeLimit
 }
 
@@ -627,11 +628,11 @@ func (t TaskTrigger) GetID() string {
 	return t.ID
 }
 
-func (t TaskTrigger) GetRepetitionInterval() string {
+func (t TaskTrigger) GetRepetitionInterval() period.Period {
 	return t.RepetitionInterval
 }
 
-func (t TaskTrigger) GetStartBoundary() string {
+func (t TaskTrigger) GetStartBoundary() time.Time {
 	return t.StartBoundary
 }
 

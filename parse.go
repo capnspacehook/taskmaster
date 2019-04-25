@@ -51,7 +51,7 @@ func parseRunningTask(task *ole.IDispatch) *RunningTask {
 	return runningTask
 }
 
-func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
+func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 	var err error
 
 	name := oleutil.MustGetProperty(task, "Name").ToString()
@@ -84,7 +84,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
 		return nil
 	})
 	if err != nil {
-		return RegisteredTask{}, "", err
+		return nil, "", err
 	}
 
 	principal := oleutil.MustGetProperty(definition, "Principal").ToIDispatch()
@@ -93,11 +93,17 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
 
 	regInfo := oleutil.MustGetProperty(definition, "RegistrationInfo").ToIDispatch()
 	defer regInfo.Release()
-	registrationInfo := parseRegistrationInfo(regInfo)
+	registrationInfo, err := parseRegistrationInfo(regInfo)
+	if err != nil {
+		return nil, "", err
+	}
 
 	settings := oleutil.MustGetProperty(definition, "Settings").ToIDispatch()
 	defer settings.Release()
-	taskSettings := parseTaskSettings(settings)
+	taskSettings, err := parseTaskSettings(settings)
+	if err != nil {
+		return nil, "", err
+	}
 
 	triggers := oleutil.MustGetProperty(definition, "Triggers").ToIDispatch()
 	defer triggers.Release()
@@ -116,19 +122,19 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
 		return nil
 	})
 	if err != nil {
-		return RegisteredTask{}, "", err
+		return nil, "", err
 	}
 
 	taskDef := Definition{
 		Actions:          taskActions,
 		Context:          context,
 		Principal:        taskPrincipal,
-		Settings:         taskSettings,
-		RegistrationInfo: registrationInfo,
+		Settings:         *taskSettings,
+		RegistrationInfo: *registrationInfo,
 		Triggers:         taskTriggers,
 	}
 
-	RegisteredTask := RegisteredTask{
+	RegisteredTask := &RegisteredTask{
 		taskObj:        task,
 		Name:           name,
 		Path:           path,
@@ -208,9 +214,12 @@ func parsePrincipal(principleObj *ole.IDispatch) Principal {
 	return principle
 }
 
-func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
+func parseRegistrationInfo(regInfo *ole.IDispatch) (*RegistrationInfo, error) {
 	author := oleutil.MustGetProperty(regInfo, "Author").ToString()
-	date := oleutil.MustGetProperty(regInfo, "Date").ToString()
+	date, err := TaskDateToTime(oleutil.MustGetProperty(regInfo, "Date").ToString())
+	if err != nil {
+		return nil, err
+	}
 	description := oleutil.MustGetProperty(regInfo, "Description").ToString()
 	documentation := oleutil.MustGetProperty(regInfo, "Documentation").ToString()
 	securityDescriptor := oleutil.MustGetProperty(regInfo, "SecurityDescriptor").ToString()
@@ -218,7 +227,7 @@ func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
 	uri := oleutil.MustGetProperty(regInfo, "URI").ToString()
 	version := oleutil.MustGetProperty(regInfo, "Version").ToString()
 
-	registrationInfo := RegistrationInfo{
+	registrationInfo := &RegistrationInfo{
 		Author:             author,
 		Date:               date,
 		Description:        description,
@@ -229,25 +238,34 @@ func parseRegistrationInfo(regInfo *ole.IDispatch) RegistrationInfo {
 		Version:            version,
 	}
 
-	return registrationInfo
+	return registrationInfo, nil
 }
 
-func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
+func parseTaskSettings(settings *ole.IDispatch) (*TaskSettings, error) {
 	allowDemandStart := oleutil.MustGetProperty(settings, "AllowDemandStart").Value().(bool)
 	allowHardTerminate := oleutil.MustGetProperty(settings, "AllowHardTerminate").Value().(bool)
 	compatibility := TaskCompatibility(oleutil.MustGetProperty(settings, "Compatibility").Val)
 	deleteExpiredTaskAfter := oleutil.MustGetProperty(settings, "DeleteExpiredTaskAfter").ToString()
 	dontStartOnBatteries := oleutil.MustGetProperty(settings, "DisallowStartIfOnBatteries").Value().(bool)
 	enabled := oleutil.MustGetProperty(settings, "Enabled").Value().(bool)
-	timeLimit := oleutil.MustGetProperty(settings, "ExecutionTimeLimit").ToString()
+	timeLimit, err := StringToPeriod(oleutil.MustGetProperty(settings, "ExecutionTimeLimit").ToString())
+	if err != nil {
+		return nil, err
+	}
 	hidden := oleutil.MustGetProperty(settings, "Hidden").Value().(bool)
 
 	idleSettings := oleutil.MustGetProperty(settings, "IdleSettings").ToIDispatch()
 	defer idleSettings.Release()
-	idleDuration := oleutil.MustGetProperty(idleSettings, "IdleDuration").ToString()
+	idleDuration, err := StringToPeriod(oleutil.MustGetProperty(idleSettings, "IdleDuration").ToString())
+	if err != nil {
+		return nil, err
+	}
 	restartOnIdle := oleutil.MustGetProperty(idleSettings, "RestartOnIdle").Value().(bool)
 	stopOnIdleEnd := oleutil.MustGetProperty(idleSettings, "StopOnIdleEnd").Value().(bool)
-	waitTimeOut := oleutil.MustGetProperty(idleSettings, "WaitTimeout").ToString()
+	waitTimeOut, err := StringToPeriod(oleutil.MustGetProperty(idleSettings, "WaitTimeout").ToString())
+	if err != nil {
+		return nil, err
+	}
 
 	multipleInstances := TaskInstancesPolicy(oleutil.MustGetProperty(settings, "MultipleInstances").Val)
 
@@ -258,7 +276,10 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 
 	priority := int(oleutil.MustGetProperty(settings, "Priority").Val)
 	restartCount := int(oleutil.MustGetProperty(settings, "RestartCount").Val)
-	restartInterval := oleutil.MustGetProperty(settings, "RestartInterval").ToString()
+	restartInterval, err := StringToPeriod(oleutil.MustGetProperty(settings, "RestartInterval").ToString())
+	if err != nil {
+		return nil, err
+	}
 	runOnlyIfIdle := oleutil.MustGetProperty(settings, "RunOnlyIfIdle").Value().(bool)
 	runOnlyIfNetworkAvailable := oleutil.MustGetProperty(settings, "RunOnlyIfNetworkAvailable").Value().(bool)
 	startWhenAvailable := oleutil.MustGetProperty(settings, "StartWhenAvailable").Value().(bool)
@@ -277,7 +298,7 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 		Name: name,
 	}
 
-	taskSettings := TaskSettings{
+	taskSettings := &TaskSettings{
 		AllowDemandStart:          allowDemandStart,
 		AllowHardTerminate:        allowHardTerminate,
 		Compatibility:             compatibility,
@@ -299,22 +320,37 @@ func parseTaskSettings(settings *ole.IDispatch) TaskSettings {
 		WakeToRun:                 wakeToRun,
 	}
 
-	return taskSettings
+	return taskSettings, nil
 }
 
 func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	enabled := oleutil.MustGetProperty(trigger, "Enabled").Value().(bool)
-	endBoundary := oleutil.MustGetProperty(trigger, "EndBoundary").ToString()
-	executionTimeLimit := oleutil.MustGetProperty(trigger, "ExecutionTimeLimit").ToString()
+	endBoundary, err := TaskDateToTime(oleutil.MustGetProperty(trigger, "EndBoundary").ToString())
+	if err != nil {
+		return nil, err
+	}
+	executionTimeLimit, err := StringToPeriod(oleutil.MustGetProperty(trigger, "ExecutionTimeLimit").ToString())
+	if err != nil {
+		return nil, err
+	}
 	id := oleutil.MustGetProperty(trigger, "Id").ToString()
 
 	repetition := oleutil.MustGetProperty(trigger, "Repetition").ToIDispatch()
 	defer repetition.Release()
-	duration := oleutil.MustGetProperty(repetition, "Duration").ToString()
-	interval := oleutil.MustGetProperty(repetition, "Interval").ToString()
+	duration, err := StringToPeriod(oleutil.MustGetProperty(repetition, "Duration").ToString())
+	if err != nil {
+		return nil, err
+	}
+	interval, err := StringToPeriod(oleutil.MustGetProperty(repetition, "Interval").ToString())
+	if err != nil {
+		return nil, err
+	}
 	stopAtDurationEnd := oleutil.MustGetProperty(repetition, "StopAtDurationEnd").Value().(bool)
 
-	startBoundary := oleutil.MustGetProperty(trigger, "StartBoundary").ToString()
+	startBoundary, err := TaskDateToTime(oleutil.MustGetProperty(trigger, "StartBoundary").ToString())
+	if err != nil {
+		return nil, err
+	}
 	triggerType := TaskTriggerType(oleutil.MustGetProperty(trigger, "Type").Val)
 
 	taskTriggerObj := TaskTrigger{
@@ -335,7 +371,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 	switch triggerType {
 	case TASK_TRIGGER_BOOT:
-		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
+		delay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "Delay").ToString())
+		if err != nil {
+			return nil, err
+		}
 
 		bootTrigger := BootTrigger{
 			TaskTrigger: taskTriggerObj,
@@ -345,7 +384,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		return bootTrigger, nil
 	case TASK_TRIGGER_DAILY:
 		daysInterval := DayInterval(oleutil.MustGetProperty(trigger, "DaysInterval").Val)
-		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
+		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
+		if err != nil {
+			return nil, err
+		}
 
 		dailyTrigger := DailyTrigger{
 			TaskTrigger: taskTriggerObj,
@@ -355,13 +397,16 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return dailyTrigger, nil
 	case TASK_TRIGGER_EVENT:
-		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
+		delay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "Delay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		subscription := oleutil.MustGetProperty(trigger, "Subscription").ToString()
 		valueQueriesObj := oleutil.MustGetProperty(trigger, "ValueQueries").ToIDispatch()
 		defer valueQueriesObj.Release()
 
 		valQueryMap := make(map[string]string)
-		err := oleutil.ForEach(valueQueriesObj, func(v *ole.VARIANT) error {
+		err = oleutil.ForEach(valueQueriesObj, func(v *ole.VARIANT) error {
 			valueQuery := v.ToIDispatch()
 			defer valueQuery.Release()
 
@@ -391,7 +436,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return idleTrigger, nil
 	case TASK_TRIGGER_LOGON:
-		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
+		delay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "Delay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		userID := oleutil.MustGetProperty(trigger, "UserId").ToString()
 
 		logonTrigger := LogonTrigger{
@@ -404,7 +452,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	case TASK_TRIGGER_MONTHLYDOW:
 		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
 		monthsOfYear := Month(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
-		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
+		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastWeekOfMonth").Value().(bool)
 		weeksOfMonth := Week(oleutil.MustGetProperty(trigger, "WeeksOfMonth").Val)
 
@@ -421,7 +472,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 	case TASK_TRIGGER_MONTHLY:
 		daysOfMonth := DayOfMonth(oleutil.MustGetProperty(trigger, "DaysOfMonth").Val)
 		monthsOfYear := Month(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
-		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
+		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		runOnLastWeekOfMonth := oleutil.MustGetProperty(trigger, "RunOnLastDayOfMonth").Value().(bool)
 
 		monthlyTrigger := MonthlyTrigger{
@@ -434,8 +488,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return monthlyTrigger, nil
 	case TASK_TRIGGER_REGISTRATION:
-		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
-
+		delay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "Delay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		registrationTrigger := RegistrationTrigger{
 			TaskTrigger: taskTriggerObj,
 			Delay:       delay,
@@ -443,8 +499,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return registrationTrigger, nil
 	case TASK_TRIGGER_TIME:
-		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
-
+		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		timetrigger := TimeTrigger{
 			TaskTrigger: taskTriggerObj,
 			RandomDelay: randomDelay,
@@ -453,7 +511,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		return timetrigger, nil
 	case TASK_TRIGGER_WEEKLY:
 		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
-		randomDelay := oleutil.MustGetProperty(trigger, "RandomDelay").ToString()
+		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		weeksInterval := WeekInterval(oleutil.MustGetProperty(trigger, "WeeksInterval").Val)
 
 		weeklyTrigger := WeeklyTrigger{
@@ -465,7 +526,10 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return weeklyTrigger, nil
 	case TASK_TRIGGER_SESSION_STATE_CHANGE:
-		delay := oleutil.MustGetProperty(trigger, "Delay").ToString()
+		delay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "Delay").ToString())
+		if err != nil {
+			return nil, err
+		}
 		stateChange := TaskSessionStateChangeType(oleutil.MustGetProperty(trigger, "StateChange").Val)
 		userID := oleutil.MustGetProperty(trigger, "UserId").ToString()
 
@@ -583,7 +647,7 @@ func fillPrincipalObj(principal Principal, principalObj *ole.IDispatch) {
 
 func fillRegistrationInfoObj(regInfo RegistrationInfo, regInfoObj *ole.IDispatch) {
 	oleutil.MustPutProperty(regInfoObj, "Author", regInfo.Author)
-	oleutil.MustPutProperty(regInfoObj, "Date", regInfo.Date)
+	oleutil.MustPutProperty(regInfoObj, "Date", TimeToTaskDate(regInfo.Date))
 	oleutil.MustPutProperty(regInfoObj, "Description", regInfo.Description)
 	oleutil.MustPutProperty(regInfoObj, "Documentation", regInfo.Documentation)
 	oleutil.MustPutProperty(regInfoObj, "SecurityDescriptor", regInfo.SecurityDescriptor)
@@ -599,15 +663,15 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(settingsObj, "DeleteExpiredTaskAfter", settings.DeleteExpiredTaskAfter)
 	oleutil.MustPutProperty(settingsObj, "DisallowStartIfOnBatteries", settings.DontStartOnBatteries)
 	oleutil.MustPutProperty(settingsObj, "Enabled", settings.Enabled)
-	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", settings.TimeLimit)
+	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", PeriodToString(settings.TimeLimit))
 	oleutil.MustPutProperty(settingsObj, "Hidden", settings.Hidden)
 
 	idlesettingsObj := oleutil.MustGetProperty(settingsObj, "IdleSettings").ToIDispatch()
 	defer idlesettingsObj.Release()
-	oleutil.MustPutProperty(idlesettingsObj, "IdleDuration", settings.IdleSettings.IdleDuration)
+	oleutil.MustPutProperty(idlesettingsObj, "IdleDuration", PeriodToString(settings.IdleSettings.IdleDuration))
 	oleutil.MustPutProperty(idlesettingsObj, "RestartOnIdle", settings.IdleSettings.RestartOnIdle)
 	oleutil.MustPutProperty(idlesettingsObj, "StopOnIdleEnd", settings.IdleSettings.StopOnIdleEnd)
-	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", settings.IdleSettings.WaitTimeout)
+	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", PeriodToString(settings.IdleSettings.WaitTimeout))
 
 	oleutil.MustPutProperty(settingsObj, "MultipleInstances", int(settings.MultipleInstances))
 
@@ -618,7 +682,7 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 
 	oleutil.MustPutProperty(settingsObj, "Priority", settings.Priority)
 	oleutil.MustPutProperty(settingsObj, "RestartCount", settings.RestartCount)
-	oleutil.MustPutProperty(settingsObj, "RestartInterval", settings.RestartInterval)
+	oleutil.MustPutProperty(settingsObj, "RestartInterval", PeriodToString(settings.RestartInterval))
 	oleutil.MustPutProperty(settingsObj, "RunOnlyIfIdle", settings.RunOnlyIfIdle)
 	oleutil.MustPutProperty(settingsObj, "RunOnlyIfNetworkAvailable", settings.RunOnlyIfNetworkAvailable)
 	oleutil.MustPutProperty(settingsObj, "StartWhenAvailable", settings.StartWhenAvailable)
@@ -636,17 +700,17 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 		defer triggerObj.Release()
 
 		oleutil.MustPutProperty(triggerObj, "Enabled", trigger.GetEnabled())
-		oleutil.MustPutProperty(triggerObj, "EndBoundary", trigger.GetEndBoundary())
-		oleutil.MustPutProperty(triggerObj, "ExecutionTimeLimit", trigger.GetExecutionTimeLimit())
+		oleutil.MustPutProperty(triggerObj, "EndBoundary", TimeToTaskDate(trigger.GetEndBoundary()))
+		oleutil.MustPutProperty(triggerObj, "ExecutionTimeLimit", PeriodToString(trigger.GetExecutionTimeLimit()))
 		oleutil.MustPutProperty(triggerObj, "Id", trigger.GetID())
 
 		repetitionObj := oleutil.MustGetProperty(triggerObj, "Repetition").ToIDispatch()
 		defer repetitionObj.Release()
-		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetRepetitionDuration())
-		oleutil.MustPutProperty(repetitionObj, "Interval", trigger.GetRepetitionInterval())
+		oleutil.MustPutProperty(repetitionObj, "Duration", PeriodToString(trigger.GetRepetitionDuration()))
+		oleutil.MustPutProperty(repetitionObj, "Interval", PeriodToString(trigger.GetRepetitionInterval()))
 		oleutil.MustPutProperty(repetitionObj, "StopAtDurationEnd", trigger.GetStopAtDurationEnd())
 
-		oleutil.MustPutProperty(triggerObj, "StartBoundary", trigger.GetStartBoundary())
+		oleutil.MustPutProperty(triggerObj, "StartBoundary", TimeToTaskDate(trigger.GetStartBoundary()))
 
 		switch triggerType {
 		case TASK_TRIGGER_BOOT:
@@ -654,20 +718,20 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			bootTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{2a9c35da-d357-41f4-bbc1-207ac1b1f3cb}"))
 			defer bootTriggerObj.Release()
 
-			oleutil.MustPutProperty(bootTriggerObj, "Delay", bootTrigger.Delay)
+			oleutil.MustPutProperty(bootTriggerObj, "Delay", PeriodToString(bootTrigger.Delay))
 		case TASK_TRIGGER_DAILY:
 			dailyTrigger := trigger.(DailyTrigger)
 			dailyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{126c5cd8-b288-41d5-8dbf-e491446adc5c}"))
 			defer dailyTriggerObj.Release()
 
 			oleutil.MustPutProperty(dailyTriggerObj, "DaysInterval", int(dailyTrigger.DayInterval))
-			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", dailyTrigger.RandomDelay)
+			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", PeriodToString(dailyTrigger.RandomDelay))
 		case TASK_TRIGGER_EVENT:
 			eventTrigger := trigger.(EventTrigger)
 			eventTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{d45b0167-9653-4eef-b94f-0732ca7af251}"))
 			defer eventTriggerObj.Release()
 
-			oleutil.MustPutProperty(eventTriggerObj, "Delay", eventTrigger.Delay)
+			oleutil.MustPutProperty(eventTriggerObj, "Delay", PeriodToString(eventTrigger.Delay))
 			oleutil.MustPutProperty(eventTriggerObj, "Subscription", eventTrigger.Subscription)
 			valueQueriesObj := oleutil.MustGetProperty(eventTriggerObj, "ValueQueries").ToIDispatch()
 			defer valueQueriesObj.Release()
@@ -683,7 +747,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			logonTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{72dade38-fae4-4b3e-baf4-5d009af02b1c}"))
 			defer logonTriggerObj.Release()
 
-			oleutil.MustPutProperty(logonTriggerObj, "Delay", logonTrigger.Delay)
+			oleutil.MustPutProperty(logonTriggerObj, "Delay", PeriodToString(logonTrigger.Delay))
 			oleutil.MustPutProperty(logonTriggerObj, "UserId", logonTrigger.UserID)
 		case TASK_TRIGGER_MONTHLYDOW:
 			monthlyDOWTrigger := trigger.(MonthlyDOWTrigger)
@@ -692,7 +756,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "DaysOfWeek", int(monthlyDOWTrigger.DaysOfWeek))
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "MonthsOfYear", int(monthlyDOWTrigger.MonthsOfYear))
-			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", monthlyDOWTrigger.RandomDelay)
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", PeriodToString(monthlyDOWTrigger.RandomDelay))
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RunOnLastWeekOfMonth", monthlyDOWTrigger.RunOnLastWeekOfMonth)
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "WeeksOfMonth", int(monthlyDOWTrigger.WeeksOfMonth))
 		case TASK_TRIGGER_MONTHLY:
@@ -702,34 +766,34 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 			oleutil.MustPutProperty(monthlyTriggerObj, "DaysOfMonth", int(monthlyTrigger.DaysOfMonth))
 			oleutil.MustPutProperty(monthlyTriggerObj, "MonthsOfYear", int(monthlyTrigger.MonthsOfYear))
-			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", monthlyTrigger.RandomDelay)
+			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", PeriodToString(monthlyTrigger.RandomDelay))
 			oleutil.MustPutProperty(monthlyTriggerObj, "RunOnLastDayOfMonth", monthlyTrigger.RunOnLastWeekOfMonth)
 		case TASK_TRIGGER_REGISTRATION:
 			registrationTrigger := trigger.(RegistrationTrigger)
 			registrationTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{4c8fec3a-c218-4e0c-b23d-629024db91a2}"))
 			defer registrationTriggerObj.Release()
 
-			oleutil.MustPutProperty(registrationTriggerObj, "Delay", registrationTrigger.Delay)
+			oleutil.MustPutProperty(registrationTriggerObj, "Delay", PeriodToString(registrationTrigger.Delay))
 		case TASK_TRIGGER_TIME:
 			timeTrigger := trigger.(TimeTrigger)
 			timeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{b45747e0-eba7-4276-9f29-85c5bb300006}"))
 			defer timeTriggerObj.Release()
 
-			oleutil.MustPutProperty(timeTriggerObj, "RandomDelay", timeTrigger.RandomDelay)
+			oleutil.MustPutProperty(timeTriggerObj, "RandomDelay", PeriodToString(timeTrigger.RandomDelay))
 		case TASK_TRIGGER_WEEKLY:
 			weeklyTrigger := trigger.(WeeklyTrigger)
 			weeklyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{5038fc98-82ff-436d-8728-a512a57c9dc1}"))
 			defer weeklyTriggerObj.Release()
 
 			oleutil.MustPutProperty(weeklyTriggerObj, "DaysOfWeek", int(weeklyTrigger.DaysOfWeek))
-			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", weeklyTrigger.RandomDelay)
+			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", PeriodToString(weeklyTrigger.RandomDelay))
 			oleutil.MustPutProperty(weeklyTriggerObj, "WeeksInterval", int(weeklyTrigger.WeekInterval))
 		case TASK_TRIGGER_SESSION_STATE_CHANGE:
 			sessionStateChangeTrigger := trigger.(SessionStateChangeTrigger)
 			sessionStateChangeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{754da71b-4385-4475-9dd9-598294fa3641}"))
 			defer sessionStateChangeTriggerObj.Release()
 
-			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", sessionStateChangeTrigger.Delay)
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", PeriodToString(sessionStateChangeTrigger.Delay))
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "StateChange", int(sessionStateChangeTrigger.StateChange))
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "UserId", sessionStateChangeTrigger.UserId)
 			// need to find GUID

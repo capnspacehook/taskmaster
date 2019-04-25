@@ -4,6 +4,7 @@ package taskmaster
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/user"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	ole "github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/rickb777/date/period"
 )
 
 func (t *TaskService) initialize() error {
@@ -61,7 +63,7 @@ func Connect(serverName, domain, username, password string) (*TaskService, error
 
 	_, err = oleutil.CallMethod(taskService.taskServiceObj, "Connect", serverName, username, domain, password)
 	if err != nil {
-		errCode := err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
+		errCode := GetOLEErrorCode(err)
 		switch errCode {
 		case 0x80070005:
 			return nil, errors.New("access is denied to connect to the Task Scheduler service")
@@ -192,8 +194,8 @@ func (t *TaskService) GetRegisteredTasks() error {
 		if err != nil {
 			return err
 		}
-		t.RegisteredTasks[path] = &registeredTask
-		t.RootFolder.RegisteredTasks = append(t.RootFolder.RegisteredTasks, &registeredTask)
+		t.RegisteredTasks[path] = registeredTask
+		t.RootFolder.RegisteredTasks = append(t.RootFolder.RegisteredTasks, registeredTask)
 
 		return nil
 	})
@@ -230,8 +232,8 @@ func (t *TaskService) GetRegisteredTasks() error {
 				if err != nil {
 					return err
 				}
-				t.RegisteredTasks[path] = &registeredTask
-				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, &registeredTask)
+				t.RegisteredTasks[path] = registeredTask
+				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, registeredTask)
 
 				return nil
 			})
@@ -279,9 +281,9 @@ func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 	if _, exists := t.RegisteredTasks[path]; exists {
 		t.RegisteredTasks[path].taskObj.Release()
 	}
-	t.RegisteredTasks[path] = &task
+	t.RegisteredTasks[path] = task
 
-	return &task, nil
+	return task, nil
 }
 
 // NewTaskDefinition returns a new task definition that can be used to register a new task.
@@ -292,7 +294,7 @@ func (t TaskService) NewTaskDefinition() Definition {
 	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
 	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
 
-	newDef.RegistrationInfo.Date = TimeToTaskDate(time.Now())
+	newDef.RegistrationInfo.Date = time.Now()
 
 	newDef.Settings.AllowDemandStart = true
 	newDef.Settings.AllowHardTerminate = true
@@ -300,8 +302,8 @@ func (t TaskService) NewTaskDefinition() Definition {
 	newDef.Settings.DontStartOnBatteries = true
 	newDef.Settings.Enabled = true
 	newDef.Settings.Hidden = false
-	newDef.Settings.IdleSettings.IdleDuration = "PT10M"
-	newDef.Settings.IdleSettings.WaitTimeout = "PT1H"
+	newDef.Settings.IdleSettings.IdleDuration = period.NewHMS(0, 10, 0) // PT10M
+	newDef.Settings.IdleSettings.WaitTimeout = period.NewHMS(1, 0, 0)   // PT1H
 	newDef.Settings.MultipleInstances = TASK_INSTANCES_IGNORE_NEW
 	newDef.Settings.Priority = 7
 	newDef.Settings.RestartCount = 0
@@ -311,7 +313,7 @@ func (t TaskService) NewTaskDefinition() Definition {
 	newDef.Settings.StartWhenAvailable = false
 	newDef.Settings.StopIfGoingOnBatteries = true
 	newDef.Settings.StopOnIdleEnd = true
-	newDef.Settings.TimeLimit = "PT72H"
+	newDef.Settings.TimeLimit = period.NewHMS(72, 0, 0) // PT72H
 	newDef.Settings.WakeToRun = false
 
 	return newDef
@@ -341,7 +343,16 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 			if !overwrite {
 				return nil, false, nil
 			}
-			oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
+			_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
+			if err != nil {
+				errCode := GetOLEErrorCode(err)
+				switch errCode {
+				case 0x80070005:
+					return nil, false, fmt.Errorf("access is denied to delete %s task", path)
+				default:
+					return nil, false, err
+				}
+			}
 		}
 	}
 
@@ -356,9 +367,9 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 	}
 
 	// TODO: update taskService with possibly new folders
-	t.RegisteredTasks[path] = &newTask
+	t.RegisteredTasks[path] = newTask
 
-	return &newTask, true, nil
+	return newTask, true, nil
 }
 
 func (t *TaskService) UpdateTask(path string, newTaskDef Definition) (*RegisteredTask, error) {
@@ -390,9 +401,9 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 	if updatedTask, ok := t.RegisteredTasks[path]; ok {
 		updatedTask.taskObj.Release()
 	}
-	t.RegisteredTasks[path] = &newTask
+	t.RegisteredTasks[path] = newTask
 
-	return &newTask, nil
+	return newTask, nil
 }
 
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
@@ -421,7 +432,7 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 
 	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, int(flags), username, password, int(logonType), "")
 	if err != nil {
-		errCode := err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
+		errCode := GetOLEErrorCode(err)
 		switch errCode {
 		case 0x80070005:
 			return nil, errors.New("access is denied to connect to the Task Scheduler service")
@@ -513,7 +524,13 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 			currentFolderPath := oleutil.MustGetProperty(folderObj, "Path").ToString()
 			_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", currentFolderPath, 0)
 			if err != nil {
-				return err
+				errCode := GetOLEErrorCode(err)
+				switch errCode {
+				case 0x80070005:
+					return fmt.Errorf("access is denied to delete %s task", path)
+				default:
+					return err
+				}
 			}
 
 			return nil
@@ -549,7 +566,13 @@ func (t *TaskService) DeleteTask(path string) error {
 
 	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
 	if err != nil {
-		return err
+		errCode := GetOLEErrorCode(err)
+		switch errCode {
+		case 0x80070005:
+			return fmt.Errorf("access is denied to delete %s task", path)
+		default:
+			return err
+		}
 	}
 
 	// update the internal database of registered tasks
