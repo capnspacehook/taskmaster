@@ -12,6 +12,7 @@ import (
 )
 
 var taskDateFormat = "2006-01-02T15:04:05"
+var taskDateFormatWTimeZone = "2006-01-02T15:04:05-07:00"
 
 func IntToDayOfMonth(dayOfMonth int) (DayOfMonth, error) {
 	if dayOfMonth < 1 || dayOfMonth > 32 {
@@ -35,9 +36,15 @@ func TaskDateToTime(s string) (time.Time, error) {
 		return time.Time{}, nil
 	}
 
+	// try parsing with the first format, and it that doesn't work, use the second one.
+	// this is necessary because Microsoft feels the need to randomly pick one of two
+	// time formats when creating built-in tasks.
 	t, err := time.Parse(taskDateFormat, s)
 	if err != nil {
-		return time.Time{}, err
+		t, err = time.Parse(taskDateFormatWTimeZone, s)
+		if err != nil {
+			return time.Time{}, err
+		}
 	}
 
 	return t, nil
