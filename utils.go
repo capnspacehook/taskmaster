@@ -41,7 +41,7 @@ func TaskDateToTime(s string) (time.Time, error) {
 	var t time.Time
 	var err error
 
-	if strings.Count(s, "-") == 3 {
+	if strings.Count(s, "-") == 3 || strings.Contains(s, "+") {
 		t, err = time.Parse(taskDateFormatWTimeZone, s)
 	} else if s[len(s)-1] == 'Z' {
 		t, err = time.Parse(taskDateFormatUTC, s)
