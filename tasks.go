@@ -3,7 +3,7 @@
 package taskmaster
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-ole/go-ole"
@@ -360,7 +360,7 @@ func (d *Definition) AddWeeklyTriggerEx(dayOfWeek Day, weekInterval WeekInterval
 func (r RunningTask) Refresh() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Refresh")
 	if err != nil {
-		return err
+		return fmt.Errorf("error calling Refresh on %s IRunningTask: %s", r.Path, err)
 	}
 
 	return nil
@@ -371,7 +371,7 @@ func (r RunningTask) Refresh() error {
 func (r *RunningTask) Stop() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Stop")
 	if err != nil {
-		return errors.New("cannot stop running task; access is denied")
+		return fmt.Errorf("error calling Stop on %s IRunningTask: %s", r.Path, err)
 	}
 
 	r.taskObj.Release()
@@ -397,12 +397,12 @@ func (r *RegisteredTask) Run(args []string) (*RunningTask, error) {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-runex
 func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
 	if !r.Enabled {
-		return nil, errors.New("cannot run a disabled task")
+		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: cannot run a disabled task", r.Path)
 	}
 
 	runningTaskObj, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
 	}
 
 	runningTask := parseRunningTask(runningTaskObj.ToIDispatch())
@@ -415,7 +415,7 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
 	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
 	}
 
 	runningTasksObj := runningTasks.ToIDispatch()

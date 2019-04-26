@@ -57,7 +57,7 @@ func Connect(serverName, domain, username, password string) (*TaskService, error
 	if !taskService.isInitialized {
 		err = taskService.initialize()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error initializing ITaskService object: %s", err)
 		}
 	}
 
@@ -66,17 +66,17 @@ func Connect(serverName, domain, username, password string) (*TaskService, error
 		errCode := GetOLEErrorCode(err)
 		switch errCode {
 		case 0x80070005:
-			return nil, errors.New("access is denied to connect to the Task Scheduler service")
+			return nil, errors.New("error connecting to the Task Scheduler service: access is denied to connect to the Task Scheduler service")
 		case 0x80041315:
-			return nil, errors.New("the Task Scheduler service is not running")
+			return nil, errors.New("error connecting to the Task Scheduler service: the Task Scheduler service is not running")
 		case 0x8007000e:
-			return nil, errors.New("the application does not have enough memory to complete the operation")
+			return nil, errors.New("error connecting to the Task Scheduler service: the application does not have enough memory to complete the operation")
 		case 0x80070032, 53:
-			return nil, errors.New("cannot connect to target computer")
+			return nil, errors.New("error connecting to the Task Scheduler service: cannot connect to target computer")
 		case 50:
-			return nil, errors.New("cannot connect to the XP or server 2003 computer")
+			return nil, errors.New("error connecting to the Task Scheduler service: cannot connect to the XP or server 2003 computer")
 		default:
-			return nil, err
+			return nil, fmt.Errorf("error connecting to the Task Scheduler service: %s", err)
 		}
 	}
 
@@ -192,7 +192,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 
 		registeredTask, path, err := parseRegisteredTask(task)
 		if err != nil {
-			return err
+			return fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 		}
 		t.RegisteredTasks[path] = registeredTask
 		t.RootFolder.RegisteredTasks = append(t.RootFolder.RegisteredTasks, registeredTask)
@@ -230,7 +230,7 @@ func (t *TaskService) GetRegisteredTasks() error {
 
 				registeredTask, path, err := parseRegisteredTask(task)
 				if err != nil {
-					return err
+					return fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 				}
 				t.RegisteredTasks[path] = registeredTask
 				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, registeredTask)
@@ -276,7 +276,7 @@ func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 
 	task, _, err := parseRegisteredTask(taskObj.ToIDispatch())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 	}
 	if _, exists := t.RegisteredTasks[path]; exists {
 		t.RegisteredTasks[path].taskObj.Release()
@@ -348,9 +348,9 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 				errCode := GetOLEErrorCode(err)
 				switch errCode {
 				case 0x80070005:
-					return nil, false, fmt.Errorf("access is denied to delete %s task", path)
+					return nil, false, fmt.Errorf("error creating %s task: access is denied to delete task", path)
 				default:
-					return nil, false, err
+					return nil, false, fmt.Errorf("error creating %s task: %s", path, err)
 				}
 			}
 		}
@@ -358,12 +358,12 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 
 	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_CREATE)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("error creating %s task: %s", path, err)
 	}
 
 	newTask, _, err := parseRegisteredTask(newTaskObj)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 	}
 
 	// TODO: update taskService with possibly new folders
@@ -390,13 +390,13 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 
 	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_UPDATE)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error updating %s task: %s", path, err)
 	}
 
 	// update the internal database of registered tasks
 	newTask, _, err := parseRegisteredTask(newTaskObj)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 	}
 	if updatedTask, ok := t.RegisteredTasks[path]; ok {
 		updatedTask.taskObj.Release()
@@ -427,7 +427,7 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 
 	err = fillDefinitionObj(newTaskDef, newTaskDefObj)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error filling ITaskDefinition: %s", err)
 	}
 
 	newTaskObj, err := oleutil.CallMethod(t.RootFolder.folderObj, "RegisterTaskDefinition", path, newTaskDefObj, int(flags), username, password, int(logonType), "")
@@ -529,9 +529,9 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 				errCode := GetOLEErrorCode(err)
 				switch errCode {
 				case 0x80070005:
-					return fmt.Errorf("access is denied to delete %s task", path)
+					return fmt.Errorf("error deleting %s task folder: access is denied", path)
 				default:
-					return err
+					return fmt.Errorf("error deleting %s task folder: %s", path, err)
 				}
 			}
 
@@ -548,7 +548,7 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 	// delete parent folder
 	_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteFolder", path, 0)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error deleting %s task folder: %s", path, err)
 	}
 
 	return true, nil
@@ -571,7 +571,7 @@ func (t *TaskService) DeleteTask(path string) error {
 		errCode := GetOLEErrorCode(err)
 		switch errCode {
 		case 0x80070005:
-			return fmt.Errorf("access is denied to delete %s task", path)
+			return fmt.Errorf("error deleting %s task: access is denied", path)
 		default:
 			return err
 		}
