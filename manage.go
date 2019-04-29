@@ -289,11 +289,12 @@ func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 // NewTaskDefinition returns a new task definition that can be used to register a new task.
 // Task settings and properties are set to Task Scheduler default values.
 func (t TaskService) NewTaskDefinition() Definition {
-	newDef := Definition{}
+	var newDef Definition
 
 	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
 	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
 
+	newDef.RegistrationInfo.Author = t.connectedDomain + "\\" + t.connectedUser
 	newDef.RegistrationInfo.Date = time.Now()
 
 	newDef.Settings.AllowDemandStart = true
