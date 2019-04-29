@@ -428,7 +428,7 @@ type TaskTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-irepetitionpattern
 type RepetitionPattern struct {
 	RepetitionDuration period.Period // how long the pattern is repeated
-	RepetitionInterval period.Period // the amount of time between each restart of the task. Required if RepetitionDuration is specified
+	RepetitionInterval period.Period // the amount of time between each restart of the task. Required if RepetitionDuration is specified. Minimum time is one minute
 	StopAtDurationEnd  bool          // indicates if a running instance of the task is stopped at the end of the repetition pattern duration
 }
 
