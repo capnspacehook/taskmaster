@@ -366,7 +366,7 @@ func (r RunningTask) Refresh() error {
 	return nil
 }
 
-// Stop kills a running task.
+// Stop kills and releases a running task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-irunningtask-stop
 func (r *RunningTask) Stop() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Stop")
@@ -375,6 +375,7 @@ func (r *RunningTask) Stop() error {
 	}
 
 	r.taskObj.Release()
+	r.isReleased = true
 
 	return nil
 }
@@ -388,6 +389,9 @@ func (r *RunningTask) Release() {
 	}
 }
 
+// Run starts an instance of a registered task. If the task was started successfully,
+// a pointer to a running task will be returned.
+// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-run
 func (r *RegisteredTask) Run(args []string) (*RunningTask, error) {
 	return r.RunEx(args, TASK_RUN_AS_SELF, 0, "")
 }
@@ -411,11 +415,12 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 }
 
 // GetInstances returns all of the currently running instances of a registered task.
+// The returned slice may contain nil entries if tasks are stopped while they are being parsed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-getinstances
 func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
 	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
 	if err != nil {
-		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
+		return nil, fmt.Errorf("error calling GetInstances on %s IRegisteredTask: %s", r.Path, err)
 	}
 
 	runningTasksObj := runningTasks.ToIDispatch()
