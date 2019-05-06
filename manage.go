@@ -320,11 +320,14 @@ func (t TaskService) NewTaskDefinition() Definition {
 	return newDef
 }
 
+// CreateTask creates a registered task on the connected computer. CreateTask returns
+// true if the task was successfully registered, and false if the overwrite parameter
+// is false and a task at the specified path already exists.
 func (t *TaskService) CreateTask(path string, newTaskDef Definition, overwrite bool) (*RegisteredTask, bool, error) {
 	return t.CreateTaskEx(path, newTaskDef, "", "", newTaskDef.Principal.LogonType, overwrite)
 }
 
-// CreateTask creates a registered tasks on the connected computer. CreateTask returns
+// CreateTaskEx creates a registered task on the connected computer. CreateTaskEx returns
 // true if the task was successfully registered, and false if the overwrite parameter
 // is false and a task at the specified path already exists.
 func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, overwrite bool) (*RegisteredTask, bool, error) {
@@ -342,7 +345,12 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 	} else {
 		if t.registeredTaskExist(path) {
 			if !overwrite {
-				return nil, false, nil
+				task, err := t.GetRegisteredTask(path)
+				if err != nil {
+					return nil, false, err
+				}
+
+				return task, false, nil
 			}
 			_, err = oleutil.CallMethod(t.RootFolder.folderObj, "DeleteTask", path, 0)
 			if err != nil {
@@ -373,11 +381,12 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 	return newTask, true, nil
 }
 
+// UpdateTask updates a registered task.
 func (t *TaskService) UpdateTask(path string, newTaskDef Definition) (*RegisteredTask, error) {
 	return t.UpdateTaskEx(path, newTaskDef, "", "", newTaskDef.Principal.LogonType)
 }
 
-// UpdateTask updates a registered task.
+// UpdateTaskEx updates a registered task.
 func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username, password string, logonType TaskLogonType) (*RegisteredTask, error) {
 	var err error
 
