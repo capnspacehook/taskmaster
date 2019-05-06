@@ -157,36 +157,27 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestUpdateTask(t *testing.T) {
-	var err error
 	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
+	testTask := createTestTask(taskService)
 	defer taskService.Cleanup()
 
-	var task *RegisteredTask
-	task, err = taskService.GetRegisteredTask("\\Taskmaster\\WeeklyTrigger")
-	if err != nil {
-		t.Error(err)
-	}
-	if task == nil {
-		t.Error("WeeklyTrigger task should exist")
-	}
-
-	task.Definition.RegistrationInfo.Author = "Big Chungus"
-	_, err = taskService.UpdateTask("\\Taskmaster\\WeeklyTrigger", task.Definition)
+	testTask.Definition.RegistrationInfo.Author = "Big Chungus"
+	_, err = taskService.UpdateTask("\\Taskmaster\\TestTask", testTask.Definition)
 	if err != nil {
 		t.Error(err)
 	}
 
-	task, err = taskService.GetRegisteredTask("\\Taskmaster\\WeeklyTrigger")
+	testTask, err = taskService.GetRegisteredTask("\\Taskmaster\\TestTask")
 	if err != nil {
 		t.Error(err)
 	}
-	if task == nil {
-		t.Error("WeeklyTrigger task should exist")
+	if testTask == nil {
+		t.Error("TestTask task should exist")
 	}
-	if task.Definition.RegistrationInfo.Author != "Big Chungus" {
+	if testTask.Definition.RegistrationInfo.Author != "Big Chungus" {
 		t.Error("task was not updated")
 	}
 }
@@ -204,33 +195,20 @@ func TestGetRegisteredTasks(t *testing.T) {
 	}
 }
 
-func TestGetRegisteredTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
-	if err != nil {
-		t.Error(err)
-	}
-	defer taskService.Cleanup()
-
-	_, err = taskService.GetRegisteredTask("\\Taskmaster\\WeeklyTrigger")
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestDeleteTask(t *testing.T) {
-	var err error
 	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
+	createTestTask(taskService)
 	defer taskService.Cleanup()
 
-	err = taskService.DeleteTask("\\Taskmaster\\WeeklyTrigger")
+	err = taskService.DeleteTask("\\Taskmaster\\TestTask")
 	if err != nil {
 		t.Error(err)
 	}
 
-	deletedTask, err := taskService.GetRegisteredTask("\\Taskmaster\\WeeklyTrigger")
+	deletedTask, err := taskService.GetRegisteredTask("\\Taskmaster\\TestTask")
 	if err != nil {
 		t.Error(err)
 	}
@@ -240,11 +218,11 @@ func TestDeleteTask(t *testing.T) {
 }
 
 func TestDeleteFolder(t *testing.T) {
-	var err error
 	taskService, err := Connect("", "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
+	createTestTask(taskService)
 	defer taskService.Cleanup()
 
 	var folderDeleted bool

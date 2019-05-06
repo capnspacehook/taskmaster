@@ -5,31 +5,16 @@ package taskmaster
 import (
 	"testing"
 	"time"
-
-	"github.com/rickb777/date/period"
 )
 
-var testTask *RegisteredTask
-
-// create a task that can be used to test running, stopping etc
-func init() {
+func TestRunRegisteredTask(t *testing.T) {
 	taskService, err := Connect("", "", "", "")
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
+	testTask := createTestTask(taskService)
+	defer taskService.Cleanup()
 
-	newTaskDef := taskService.NewTaskDefinition()
-	newTaskDef.AddExecAction("cmd.exe", "/c timeout $(Arg0)", "", "")
-	newTaskDef.AddTimeTrigger(period.NewHMS(0, 0, 0), time.Now().Add(10*time.Hour))
-	newTaskDef.Settings.MultipleInstances = TASK_INSTANCES_PARALLEL
-
-	testTask, _, err = taskService.CreateTask("\\Taskmaster\\TestTask", newTaskDef, true)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func TestRunRegisteredTask(t *testing.T) {
 	runningTask, err := testTask.Run([]string{"0"})
 	if err != nil {
 		t.Error(err)
@@ -39,6 +24,13 @@ func TestRunRegisteredTask(t *testing.T) {
 }
 
 func TestRefreshRunningTask(t *testing.T) {
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	testTask := createTestTask(taskService)
+	defer taskService.Cleanup()
+
 	runningTask, err := testTask.Run([]string{"3"})
 	if err != nil {
 		t.Error(err)
@@ -55,6 +47,13 @@ func TestRefreshRunningTask(t *testing.T) {
 }
 
 func TestStopRunningTask(t *testing.T) {
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	testTask := createTestTask(taskService)
+	defer taskService.Cleanup()
+
 	runningTask, err := testTask.Run([]string{"9001"})
 	if err != nil {
 		t.Error(err)
@@ -67,11 +66,17 @@ func TestStopRunningTask(t *testing.T) {
 }
 
 func TestGetInstancesRegisteredTask(t *testing.T) {
-	var err error
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	testTask := createTestTask(taskService)
+	defer taskService.Cleanup()
+
+	runningTasks := make([]*RunningTask, 5, 5)
 
 	// create a few running tasks so that there will be multiple instances
 	// of the registered task running
-	runningTasks := make([]*RunningTask, 5, 5)
 	for i := range runningTasks {
 		runningTasks[i], err = testTask.Run([]string{"3"})
 		if err != nil {
@@ -101,10 +106,15 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 }
 
 func TestStopRegisteredTask(t *testing.T) {
-	var err error
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	testTask := createTestTask(taskService)
+	defer taskService.Cleanup()
 
 	for i := 0; i < 5; i++ {
-		_, err = testTask.Run([]string{"3"})
+		_, err := testTask.Run([]string{"3"})
 		if err != nil {
 			t.Error(err)
 		}
