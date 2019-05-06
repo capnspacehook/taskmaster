@@ -191,6 +191,32 @@ func TestUpdateTask(t *testing.T) {
 	}
 }
 
+func TestGetRegisteredTasks(t *testing.T) {
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	defer taskService.Cleanup()
+
+	err = taskService.GetRegisteredTasks()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetRegisteredTask(t *testing.T) {
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	defer taskService.Cleanup()
+
+	_, err = taskService.GetRegisteredTask("\\Taskmaster\\WeeklyTrigger")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDeleteTask(t *testing.T) {
 	var err error
 	taskService, err := Connect("", "", "", "")
