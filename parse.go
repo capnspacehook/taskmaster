@@ -407,7 +407,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 		defer valueQueriesObj.Release()
 
 		valQueryMap := make(map[string]string)
-		err = oleutil.ForEach(valueQueriesObj, func(v *ole.VARIANT) error {
+		oleutil.ForEach(valueQueriesObj, func(v *ole.VARIANT) error {
 			valueQuery := v.ToIDispatch()
 			defer valueQuery.Release()
 
