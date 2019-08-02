@@ -44,23 +44,6 @@ func (d *Definition) AddComHandlerAction(clsid, data, id string) {
 	})
 }
 
-// AddMessageBoxAction adds a MessageBox action to the task definition. The title
-// parameter is the title of the MessageBox window, and the message parameter is the
-// message the MessageBox will display. Be aware this action type is not supported on
-// modern versions of Windows.
-func (d *Definition) AddMessageBoxAction(title, message, id string) {
-	d.Actions = append(d.Actions, MessageBoxAction{
-		Title:   title,
-		Message: message,
-		TaskAction: TaskAction{
-			ID: id,
-			taskActionTypeHolder: taskActionTypeHolder{
-				actionType: TASK_ACTION_SHOW_MESSAGE,
-			},
-		},
-	})
-}
-
 func (d *Definition) AddBootTrigger(delay period.Period) {
 	d.AddBootTriggerEx(delay, "", time.Time{}, time.Time{}, period.Period{}, period.Period{}, period.Period{}, false, true)
 }
