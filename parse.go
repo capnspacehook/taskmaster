@@ -624,7 +624,7 @@ func checkActionType(actionType TaskActionType) bool {
 	case TASK_ACTION_EXEC:
 		fallthrough
 	case TASK_ACTION_COM_HANDLER:
-		fallthrough
+		return true
 	default:
 		return false
 	}
