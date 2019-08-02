@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	_, err = taskService.DeleteFolder("\\NewFolder", true)
 	if err != nil {

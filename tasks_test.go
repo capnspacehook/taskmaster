@@ -13,7 +13,7 @@ func TestRunRegisteredTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	runningTask, err := testTask.Run([]string{"0"})
 	if err != nil {
@@ -29,7 +29,7 @@ func TestRefreshRunningTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	runningTask, err := testTask.Run([]string{"3"})
 	if err != nil {
@@ -52,7 +52,7 @@ func TestStopRunningTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	runningTask, err := testTask.Run([]string{"9001"})
 	if err != nil {
@@ -71,7 +71,7 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	runningTasks := make([]*RunningTask, 5, 5)
 
@@ -111,7 +111,7 @@ func TestStopRegisteredTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	for i := 0; i < 5; i++ {
 		_, err := testTask.Run([]string{"3"})

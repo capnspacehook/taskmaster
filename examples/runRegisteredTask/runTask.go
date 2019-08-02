@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	task, err := taskService.GetRegisteredTask("\\NewTask")
 	if err != nil {

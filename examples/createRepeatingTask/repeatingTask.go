@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	newTaskDef := taskService.NewTaskDefinition()
 
