@@ -85,6 +85,21 @@ const (
 	TASK_ACTION_SHOW_MESSAGE TaskActionType = 7
 )
 
+func (t TaskActionType) String() string {
+	switch t {
+	case TASK_ACTION_EXEC:
+		return "exec"
+	case TASK_ACTION_COM_HANDLER:
+		return "com handler"
+	case TASK_ACTION_SEND_EMAIL:
+		return "send email"
+	case TASK_ACTION_SHOW_MESSAGE:
+		return "show message"
+	default:
+		return ""
+	}
+}
+
 // TaskCompatibility specifies the compatibility of a registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_compatibility
 type TaskCompatibility int
@@ -133,6 +148,21 @@ const (
 	TASK_INSTANCES_STOP_EXISTING                            // stop an existing instance of the task before it starts a new instance
 )
 
+func (t TaskInstancesPolicy) String() string {
+	switch t {
+	case TASK_INSTANCES_PARALLEL:
+		return "run parallel"
+	case TASK_INSTANCES_QUEUE:
+		return "queue instances"
+	case TASK_INSTANCES_IGNORE_NEW:
+		return "ignore new"
+	case TASK_INSTANCES_STOP_EXISTING:
+		return "stop existing"
+	default:
+		return ""
+	}
+}
+
 // TaskLogonType specifies how a registered task will authenticate when it executes.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_logon_type
 type TaskLogonType int
@@ -146,6 +176,27 @@ const (
 	TASK_LOGON_SERVICE_ACCOUNT                                    // indicates that a Local System, Local Service, or Network Service account is being used as a security context to run the task
 	TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD                      // first use the interactive token. If the user is not logged on (no interactive token is available), then the password is used. The password must be specified when a task is registered. This flag is not recommended for new tasks because it is less reliable than TASK_LOGON_PASSWORD
 )
+
+func (t TaskLogonType) String() string {
+	switch t {
+	case TASK_LOGON_NONE:
+		return "none"
+	case TASK_LOGON_PASSWORD:
+		return "password"
+	case TASK_LOGON_S4U:
+		return "s4u"
+	case TASK_LOGON_INTERACTIVE_TOKEN:
+		return "interactive token"
+	case TASK_LOGON_GROUP:
+		return "group"
+	case TASK_LOGON_SERVICE_ACCOUNT:
+		return "service account"
+	case TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD:
+		return "interactive token or password"
+	default:
+		return ""
+	}
+}
 
 // TaskRunFlags specifies how a task will be executed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_run_flags
@@ -164,9 +215,20 @@ const (
 type TaskRunLevel int
 
 const (
-	TASK_RUNLEVEL_LUA     TaskRunLevel = iota // task will be run with the least privilege
+	TASK_RUNLEVEL_LUA     TaskRunLevel = iota // task will be run with the least privileges
 	TASK_RUNLEVEL_HIGHEST                     // task will be run with the highest privileges
 )
+
+func (t TaskRunLevel) String() string {
+	switch t {
+	case TASK_RUNLEVEL_LUA:
+		return "least"
+	case TASK_RUNLEVEL_HIGHEST:
+		return "highest"
+	default:
+		return ""
+	}
+}
 
 // TaskSessionStateChangeType specifies the type of session state change that a
 // SessionStateChange trigger will trigger on.
@@ -182,6 +244,25 @@ const (
 	TASK_SESSION_UNLOCK     TaskSessionStateChangeType = 8 // Terminal Server session unlocked state change. For example, this state change causes the task to run when the computer is unlocked
 )
 
+func (t TaskSessionStateChangeType) String() string {
+	switch t {
+	case TASK_CONSOLE_CONNECT:
+		return "console connect"
+	case TASK_CONSOLE_DISCONNECT:
+		return "console disconnect"
+	case TASK_REMOTE_CONNECT:
+		return "remote connect"
+	case TASK_REMOTE_DISCONNECT:
+		return "remote disconnect"
+	case TASK_SESSION_LOCK:
+		return "session lock"
+	case TASK_SESSION_UNLOCK:
+		return "session unlock"
+	default:
+		return ""
+	}
+}
+
 // TaskState specifies the state of a running or registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_state
 type TaskState int
@@ -193,6 +274,23 @@ const (
 	TASK_STATE_READY                     // the task is ready to be executed, but no instances are queued or running
 	TASK_STATE_RUNNING                   // one or more instances of the task is running
 )
+
+func (t TaskState) String() string {
+	switch t {
+	case TASK_STATE_UNKNOWN:
+		return "unknown"
+	case TASK_STATE_DISABLED:
+		return "disabled"
+	case TASK_STATE_QUEUED:
+		return "queued"
+	case TASK_STATE_READY:
+		return "ready"
+	case TASK_STATE_RUNNING:
+		return "running"
+	default:
+		return ""
+	}
+}
 
 // TaskTriggerType specifies the type of a task trigger.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_trigger_type2
@@ -213,29 +311,52 @@ const (
 	TASK_TRIGGER_CUSTOM_TRIGGER_01    TaskTriggerType = 12
 )
 
+func (t TaskTriggerType) String() string {
+	switch t {
+	case TASK_TRIGGER_EVENT:
+		return "event"
+	case TASK_TRIGGER_TIME:
+		return "time"
+	case TASK_TRIGGER_DAILY:
+		return "daily"
+	case TASK_TRIGGER_WEEKLY:
+		return "weekly"
+	case TASK_TRIGGER_MONTHLY:
+		return "monthly"
+	case TASK_TRIGGER_MONTHLYDOW:
+		return "monthly day of the week"
+	case TASK_TRIGGER_IDLE:
+		return "idle"
+	case TASK_TRIGGER_REGISTRATION:
+		return "registration"
+	case TASK_TRIGGER_BOOT:
+		return "boot"
+	case TASK_TRIGGER_LOGON:
+		return "logon"
+	case TASK_TRIGGER_SESSION_STATE_CHANGE:
+		return "session state change"
+	case TASK_TRIGGER_CUSTOM_TRIGGER_01:
+		return "custom"
+	default:
+		return ""
+	}
+}
+
 type TaskService struct {
 	taskServiceObj        *ole.IDispatch
+	rootFolderObj         *ole.IDispatch
 	isInitialized         bool
 	isConnected           bool
 	connectedDomain       string
 	connectedComputerName string
 	connectedUser         string
-
-	RootFolder      RootFolder
-	RunningTasks    []*RunningTask
-	RegisteredTasks map[string]*RegisteredTask
-}
-
-type RootFolder struct {
-	folderObj *ole.IDispatch
-	TaskFolder
 }
 
 type TaskFolder struct {
 	Name            string
 	Path            string
-	SubFolders      []*TaskFolder
-	RegisteredTasks []*RegisteredTask
+	SubFolders      []TaskFolder
+	RegisteredTasks []RegisteredTask
 }
 
 // RunningTask is a task that is currently running.
@@ -308,28 +429,6 @@ type ComHandlerAction struct {
 	TaskAction
 	ClassID string
 	Data    string
-}
-
-// EmailAction is an action that sends email message. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
-// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iemailaction
-type EmailAction struct {
-	TaskAction
-	Body    string
-	Server  string
-	Subject string
-	To      string
-	Cc      string
-	Bcc     string
-	ReplyTo string
-	From    string
-}
-
-// MessageBoxAction is an action that shows a message box. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
-// https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-ishowMessageBoxAction
-type MessageBoxAction struct {
-	TaskAction
-	Title   string
-	Message string
 }
 
 // Principal provides security credentials that define the security context for the tasks that are associated with it.
@@ -526,58 +625,6 @@ type WeeklyTrigger struct {
 
 type CustomTrigger struct {
 	TaskTrigger
-}
-
-func (t TaskLogonType) String() string {
-	switch t {
-	case TASK_LOGON_NONE:
-		return "none"
-	case TASK_LOGON_PASSWORD:
-		return "password"
-	case TASK_LOGON_S4U:
-		return "s4u"
-	case TASK_LOGON_INTERACTIVE_TOKEN:
-		return "interactive token"
-	case TASK_LOGON_GROUP:
-		return "group"
-	case TASK_LOGON_SERVICE_ACCOUNT:
-		return "service account"
-	case TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD:
-		return "interactive token or password"
-	default:
-		return ""
-	}
-}
-
-func (t TaskTriggerType) String() string {
-	switch t {
-	case TASK_TRIGGER_EVENT:
-		return "event trigger"
-	case TASK_TRIGGER_TIME:
-		return "time trigger"
-	case TASK_TRIGGER_DAILY:
-		return "daily trigger"
-	case TASK_TRIGGER_WEEKLY:
-		return "weekly trigger"
-	case TASK_TRIGGER_MONTHLY:
-		return "monthly trigger"
-	case TASK_TRIGGER_MONTHLYDOW:
-		return "monthly day of the week trigger"
-	case TASK_TRIGGER_IDLE:
-		return "idle trigger"
-	case TASK_TRIGGER_REGISTRATION:
-		return "registration trigger"
-	case TASK_TRIGGER_BOOT:
-		return "boot trigger"
-	case TASK_TRIGGER_LOGON:
-		return "logon trigger"
-	case TASK_TRIGGER_SESSION_STATE_CHANGE:
-		return "session state change trigger"
-	case TASK_TRIGGER_CUSTOM_TRIGGER_01:
-		return "custom trigger"
-	default:
-		return ""
-	}
 }
 
 func (t TaskService) IsConnected() bool {
