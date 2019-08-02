@@ -15,7 +15,7 @@ func TestLocalConnect(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	taskService.Cleanup()
+	taskService.Disconnect()
 }
 
 func TestCreateTask(t *testing.T) {
@@ -24,7 +24,7 @@ func TestCreateTask(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	// test ExecAction
 	execTaskDef := taskService.NewTaskDefinition()
@@ -162,7 +162,7 @@ func TestUpdateTask(t *testing.T) {
 		t.Error(err)
 	}
 	testTask := createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	testTask.Definition.RegistrationInfo.Author = "Big Chungus"
 	_, err = taskService.UpdateTask("\\Taskmaster\\TestTask", testTask.Definition)
@@ -187,9 +187,22 @@ func TestGetRegisteredTasks(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
-	err = taskService.GetRegisteredTasks()
+	_, err = taskService.GetRegisteredTasks()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetTaskFolders(t *testing.T) {
+	taskService, err := Connect("", "", "", "")
+	if err != nil {
+		t.Error(err)
+	}
+	defer taskService.Disconnect()
+
+	_, err = taskService.GetTaskFolders()
 	if err != nil {
 		t.Error(err)
 	}
@@ -201,7 +214,7 @@ func TestDeleteTask(t *testing.T) {
 		t.Error(err)
 	}
 	createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	err = taskService.DeleteTask("\\Taskmaster\\TestTask")
 	if err != nil {
@@ -223,7 +236,7 @@ func TestDeleteFolder(t *testing.T) {
 		t.Error(err)
 	}
 	createTestTask(taskService)
-	defer taskService.Cleanup()
+	defer taskService.Disconnect()
 
 	var folderDeleted bool
 	folderDeleted, err = taskService.DeleteFolder("\\Taskmaster", false)
@@ -242,16 +255,18 @@ func TestDeleteFolder(t *testing.T) {
 		t.Error("folder should have been deleted")
 	}
 
-	err = taskService.GetRegisteredTasks()
+	tasks, err := taskService.GetRegisteredTasks()
 	if err != nil {
 		t.Error(err)
 	}
-	for _, taskFolder := range taskService.RootFolder.SubFolders {
-		if taskFolder.Name == "Taskmaster" {
-			t.Error("folder shouldn't exist")
-		}
+	taskmasterFolder, err := taskService.GetTaskFolder("\\Taskmaster")
+	if err != nil {
+		t.Error(err)
 	}
-	for _, task := range taskService.RegisteredTasks {
+	if taskmasterFolder != nil {
+		t.Error("folder shouldn't exist")
+	}
+	for _, task := range tasks {
 		if strings.Split(task.Path, "\\")[1] == "Taskmaster" {
 			t.Error("task should've been deleted")
 		}
