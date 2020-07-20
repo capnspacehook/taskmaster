@@ -657,7 +657,7 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(settingsObj, "DeleteExpiredTaskAfter", settings.DeleteExpiredTaskAfter)
 	oleutil.MustPutProperty(settingsObj, "DisallowStartIfOnBatteries", settings.DontStartOnBatteries)
 	oleutil.MustPutProperty(settingsObj, "Enabled", settings.Enabled)
-	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", PeriodToString(settings.TimeLimit))
+	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", settings.TimeLimit.String())
 	oleutil.MustPutProperty(settingsObj, "Hidden", settings.Hidden)
 
 	idlesettingsObj := oleutil.MustGetProperty(settingsObj, "IdleSettings").ToIDispatch()
