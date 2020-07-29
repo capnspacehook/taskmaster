@@ -31,7 +31,7 @@ func TestRefreshRunningTask(t *testing.T) {
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTask, err := testTask.Run([]string{"3"})
+	runningTask, err := testTask.Run([]string{"1"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -42,7 +42,7 @@ func TestRefreshRunningTask(t *testing.T) {
 	}
 
 	// make sure above running task is stopped
-	time.Sleep(3 * time.Second)
+	time.Sleep(time.Second)
 	runningTask.Release()
 }
 
