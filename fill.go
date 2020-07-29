@@ -115,15 +115,15 @@ func fillTaskSettingsObj(settings TaskSettings, settingsObj *ole.IDispatch) {
 	oleutil.MustPutProperty(settingsObj, "DeleteExpiredTaskAfter", settings.DeleteExpiredTaskAfter)
 	oleutil.MustPutProperty(settingsObj, "DisallowStartIfOnBatteries", settings.DontStartOnBatteries)
 	oleutil.MustPutProperty(settingsObj, "Enabled", settings.Enabled)
-	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", PeriodToString(settings.TimeLimit))
+	oleutil.MustPutProperty(settingsObj, "ExecutionTimeLimit", settings.TimeLimit.String())
 	oleutil.MustPutProperty(settingsObj, "Hidden", settings.Hidden)
 
 	idlesettingsObj := oleutil.MustGetProperty(settingsObj, "IdleSettings").ToIDispatch()
 	defer idlesettingsObj.Release()
-	oleutil.MustPutProperty(idlesettingsObj, "IdleDuration", PeriodToString(settings.IdleSettings.IdleDuration))
+	oleutil.MustPutProperty(idlesettingsObj, "IdleDuration", settings.IdleSettings.IdleDuration.String())
 	oleutil.MustPutProperty(idlesettingsObj, "RestartOnIdle", settings.IdleSettings.RestartOnIdle)
 	oleutil.MustPutProperty(idlesettingsObj, "StopOnIdleEnd", settings.IdleSettings.StopOnIdleEnd)
-	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", PeriodToString(settings.IdleSettings.WaitTimeout))
+	oleutil.MustPutProperty(idlesettingsObj, "WaitTimeout", settings.IdleSettings.WaitTimeout.String())
 
 	oleutil.MustPutProperty(settingsObj, "MultipleInstances", int(settings.MultipleInstances))
 
@@ -153,12 +153,12 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 		oleutil.MustPutProperty(triggerObj, "Enabled", trigger.GetEnabled())
 		oleutil.MustPutProperty(triggerObj, "EndBoundary", TimeToTaskDate(trigger.GetEndBoundary()))
-		oleutil.MustPutProperty(triggerObj, "ExecutionTimeLimit", PeriodToString(trigger.GetExecutionTimeLimit()))
+		oleutil.MustPutProperty(triggerObj, "ExecutionTimeLimit", trigger.GetExecutionTimeLimit().String())
 		oleutil.MustPutProperty(triggerObj, "Id", trigger.GetID())
 
 		repetitionObj := oleutil.MustGetProperty(triggerObj, "Repetition").ToIDispatch()
 		defer repetitionObj.Release()
-		oleutil.MustPutProperty(repetitionObj, "Duration", PeriodToString(trigger.GetRepetitionDuration()))
+		oleutil.MustPutProperty(repetitionObj, "Duration", trigger.GetRepetitionDuration().String())
 		oleutil.MustPutProperty(repetitionObj, "Interval", PeriodToString(trigger.GetRepetitionInterval()))
 		oleutil.MustPutProperty(repetitionObj, "StopAtDurationEnd", trigger.GetStopAtDurationEnd())
 
@@ -170,20 +170,20 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			bootTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{2a9c35da-d357-41f4-bbc1-207ac1b1f3cb}"))
 			defer bootTriggerObj.Release()
 
-			oleutil.MustPutProperty(bootTriggerObj, "Delay", PeriodToString(bootTrigger.Delay))
+			oleutil.MustPutProperty(bootTriggerObj, "Delay", bootTrigger.Delay.String())
 		case TASK_TRIGGER_DAILY:
 			dailyTrigger := trigger.(DailyTrigger)
 			dailyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{126c5cd8-b288-41d5-8dbf-e491446adc5c}"))
 			defer dailyTriggerObj.Release()
 
 			oleutil.MustPutProperty(dailyTriggerObj, "DaysInterval", int(dailyTrigger.DayInterval))
-			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", PeriodToString(dailyTrigger.RandomDelay))
+			oleutil.MustPutProperty(dailyTriggerObj, "RandomDelay", dailyTrigger.RandomDelay.String())
 		case TASK_TRIGGER_EVENT:
 			eventTrigger := trigger.(EventTrigger)
 			eventTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{d45b0167-9653-4eef-b94f-0732ca7af251}"))
 			defer eventTriggerObj.Release()
 
-			oleutil.MustPutProperty(eventTriggerObj, "Delay", PeriodToString(eventTrigger.Delay))
+			oleutil.MustPutProperty(eventTriggerObj, "Delay", eventTrigger.Delay.String())
 			oleutil.MustPutProperty(eventTriggerObj, "Subscription", eventTrigger.Subscription)
 			valueQueriesObj := oleutil.MustGetProperty(eventTriggerObj, "ValueQueries").ToIDispatch()
 			defer valueQueriesObj.Release()
@@ -199,7 +199,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			logonTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{72dade38-fae4-4b3e-baf4-5d009af02b1c}"))
 			defer logonTriggerObj.Release()
 
-			oleutil.MustPutProperty(logonTriggerObj, "Delay", PeriodToString(logonTrigger.Delay))
+			oleutil.MustPutProperty(logonTriggerObj, "Delay", logonTrigger.Delay.String())
 			oleutil.MustPutProperty(logonTriggerObj, "UserId", logonTrigger.UserID)
 		case TASK_TRIGGER_MONTHLYDOW:
 			monthlyDOWTrigger := trigger.(MonthlyDOWTrigger)
@@ -208,7 +208,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "DaysOfWeek", int(monthlyDOWTrigger.DaysOfWeek))
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "MonthsOfYear", int(monthlyDOWTrigger.MonthsOfYear))
-			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", PeriodToString(monthlyDOWTrigger.RandomDelay))
+			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RandomDelay", monthlyDOWTrigger.RandomDelay.String())
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "RunOnLastWeekOfMonth", monthlyDOWTrigger.RunOnLastWeekOfMonth)
 			oleutil.MustPutProperty(monthlyDOWTriggerObj, "WeeksOfMonth", int(monthlyDOWTrigger.WeeksOfMonth))
 		case TASK_TRIGGER_MONTHLY:
@@ -218,34 +218,34 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 
 			oleutil.MustPutProperty(monthlyTriggerObj, "DaysOfMonth", int(monthlyTrigger.DaysOfMonth))
 			oleutil.MustPutProperty(monthlyTriggerObj, "MonthsOfYear", int(monthlyTrigger.MonthsOfYear))
-			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", PeriodToString(monthlyTrigger.RandomDelay))
+			oleutil.MustPutProperty(monthlyTriggerObj, "RandomDelay", monthlyTrigger.RandomDelay.String())
 			oleutil.MustPutProperty(monthlyTriggerObj, "RunOnLastDayOfMonth", monthlyTrigger.RunOnLastWeekOfMonth)
 		case TASK_TRIGGER_REGISTRATION:
 			registrationTrigger := trigger.(RegistrationTrigger)
 			registrationTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{4c8fec3a-c218-4e0c-b23d-629024db91a2}"))
 			defer registrationTriggerObj.Release()
 
-			oleutil.MustPutProperty(registrationTriggerObj, "Delay", PeriodToString(registrationTrigger.Delay))
+			oleutil.MustPutProperty(registrationTriggerObj, "Delay", registrationTrigger.Delay.String())
 		case TASK_TRIGGER_TIME:
 			timeTrigger := trigger.(TimeTrigger)
 			timeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{b45747e0-eba7-4276-9f29-85c5bb300006}"))
 			defer timeTriggerObj.Release()
 
-			oleutil.MustPutProperty(timeTriggerObj, "RandomDelay", PeriodToString(timeTrigger.RandomDelay))
+			oleutil.MustPutProperty(timeTriggerObj, "RandomDelay", timeTrigger.RandomDelay.String())
 		case TASK_TRIGGER_WEEKLY:
 			weeklyTrigger := trigger.(WeeklyTrigger)
 			weeklyTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{5038fc98-82ff-436d-8728-a512a57c9dc1}"))
 			defer weeklyTriggerObj.Release()
 
 			oleutil.MustPutProperty(weeklyTriggerObj, "DaysOfWeek", int(weeklyTrigger.DaysOfWeek))
-			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", PeriodToString(weeklyTrigger.RandomDelay))
+			oleutil.MustPutProperty(weeklyTriggerObj, "RandomDelay", weeklyTrigger.RandomDelay.String())
 			oleutil.MustPutProperty(weeklyTriggerObj, "WeeksInterval", int(weeklyTrigger.WeekInterval))
 		case TASK_TRIGGER_SESSION_STATE_CHANGE:
 			sessionStateChangeTrigger := trigger.(SessionStateChangeTrigger)
 			sessionStateChangeTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{754da71b-4385-4475-9dd9-598294fa3641}"))
 			defer sessionStateChangeTriggerObj.Release()
 
-			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", PeriodToString(sessionStateChangeTrigger.Delay))
+			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "Delay", sessionStateChangeTrigger.Delay.String())
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "StateChange", int(sessionStateChangeTrigger.StateChange))
 			oleutil.MustPutProperty(sessionStateChangeTriggerObj, "UserId", sessionStateChangeTrigger.UserId)
 			// need to find GUID
