@@ -426,11 +426,11 @@ func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
 // user has access to. If all instances were killed, Stop returns true,
 // otherwise Stop returns false.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-stop
-func (r *RegisteredTask) Stop() bool {
-	ret, _ := oleutil.CallMethod(r.taskObj, "Stop", 0)
-	if ret.Val != 0 {
-		return false
+func (r *RegisteredTask) Stop() error {
+	_, err := oleutil.CallMethod(r.taskObj, "Stop", 0)
+	if err != nil {
+		return err
 	}
 
-	return true
+	return nil
 }

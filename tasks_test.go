@@ -120,8 +120,8 @@ func TestStopRegisteredTask(t *testing.T) {
 		}
 	}
 
-	allStopped := testTask.Stop()
-	if !allStopped {
-		t.Error("all tasks should have stopped")
+	err = testTask.Stop()
+	if err != nil {
+		t.Errorf("error stopping tasks: %v", err)
 	}
 }
