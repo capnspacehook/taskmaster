@@ -43,12 +43,19 @@ func (t *TaskService) initialize() error {
 	return nil
 }
 
-// Connect connects to a local or remote Task Scheduler service. This function
-// has to be run before any other functions in taskmaster can be used. If  the
+// Connect connects to the local Task Scheduler service, using the current
+// token for authentication. This function must run before any other functions
+// in taskmaster can be used.
+func Connect() (*TaskService, error) {
+	return ConnectWithOptions("", "", "", "")
+}
+
+// ConnectWithOptions connects to a local or remote Task Scheduler service. This
+// function must run before any other functions in taskmaster can be used. If the
 // serverName parameter is empty, a connection to the local Task Scheduler service
 // will be attempted. If the user and password parameters are empty, the current
 // token will be used for authentication.
-func Connect(serverName, domain, username, password string) (*TaskService, error) {
+func ConnectWithOptions(serverName, domain, username, password string) (*TaskService, error) {
 	var err error
 	var taskService TaskService
 

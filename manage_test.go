@@ -11,7 +11,7 @@ import (
 )
 
 func TestLocalConnect(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -20,7 +20,7 @@ func TestLocalConnect(t *testing.T) {
 
 func TestCreateTask(t *testing.T) {
 	var err error
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -157,7 +157,7 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestUpdateTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -183,7 +183,7 @@ func TestUpdateTask(t *testing.T) {
 }
 
 func TestGetRegisteredTasks(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -196,7 +196,7 @@ func TestGetRegisteredTasks(t *testing.T) {
 }
 
 func TestGetTaskFolders(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -209,7 +209,7 @@ func TestGetTaskFolders(t *testing.T) {
 }
 
 func TestDeleteTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -231,7 +231,7 @@ func TestDeleteTask(t *testing.T) {
 }
 
 func TestDeleteFolder(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}

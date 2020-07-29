@@ -8,7 +8,7 @@ import (
 )
 
 func TestRunRegisteredTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,7 +24,7 @@ func TestRunRegisteredTask(t *testing.T) {
 }
 
 func TestRefreshRunningTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -47,7 +47,7 @@ func TestRefreshRunningTask(t *testing.T) {
 }
 
 func TestStopRunningTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,7 +66,7 @@ func TestStopRunningTask(t *testing.T) {
 }
 
 func TestGetInstancesRegisteredTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +106,7 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 }
 
 func TestStopRegisteredTask(t *testing.T) {
-	taskService, err := Connect("", "", "", "")
+	taskService, err := Connect()
 	if err != nil {
 		t.Error(err)
 	}
