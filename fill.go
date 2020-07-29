@@ -51,8 +51,12 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 			return errors.New("invalid action type")
 		}
 
-		actionObj := oleutil.MustCallMethod(actionsObj, "Create", int(actionType)).ToIDispatch()
-		actionObj.Release()
+		res, err := oleutil.CallMethod(actionsObj, "Create", int(actionType))
+		if err != nil {
+			return fmt.Errorf("error creating IAction object: %v", err)
+		}
+		actionObj := res.ToIDispatch()
+		defer actionObj.Release()
 		oleutil.MustPutProperty(actionObj, "Id", action.GetID())
 
 		switch actionType {
@@ -148,7 +152,11 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 		if !checkTriggerType(triggerType) {
 			return errors.New("invalid trigger type")
 		}
-		triggerObj := oleutil.MustCallMethod(triggersObj, "Create", int(triggerType)).ToIDispatch()
+		res, err := oleutil.CallMethod(triggersObj, "Create", int(triggerType))
+		if err != nil {
+			return fmt.Errorf("error creating ITrigger object: %v", err)
+		}
+		triggerObj := res.ToIDispatch()
 		defer triggerObj.Release()
 
 		oleutil.MustPutProperty(triggerObj, "Enabled", trigger.GetEnabled())
@@ -189,7 +197,10 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			defer valueQueriesObj.Release()
 
 			for name, value := range eventTrigger.ValueQueries {
-				oleutil.MustCallMethod(valueQueriesObj, "Create", name, value)
+				_, err = oleutil.CallMethod(valueQueriesObj, "Create", name, value)
+				if err != nil {
+					return fmt.Errorf("error creating value %s: %v", name, err)
+				}
 			}
 		case TASK_TRIGGER_IDLE:
 			idleTriggerObj := triggerObj.MustQueryInterface(ole.NewGUID("{d537d2b0-9fb3-4d34-9739-1ff5ce7b1ef3}"))

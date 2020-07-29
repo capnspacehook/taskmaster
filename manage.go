@@ -105,7 +105,11 @@ func ConnectWithOptions(serverName, domain, username, password string) (*TaskSer
 	taskService.connectedComputerName = serverName
 	taskService.connectedUser = username
 
-	taskService.rootFolderObj = oleutil.MustCallMethod(taskService.taskServiceObj, "GetFolder", "\\").ToIDispatch()
+	res, err := oleutil.CallMethod(taskService.taskServiceObj, "GetFolder", "\\")
+	if err != nil {
+		return nil, fmt.Errorf("error getting the root folder: %v", err)
+	}
+	taskService.rootFolderObj = res.ToIDispatch()
 	taskService.isConnected = true
 
 	return &taskService, nil
@@ -125,12 +129,13 @@ func (t *TaskService) Disconnect() {
 
 // GetRunningTasks enumerates the Task Scheduler database for all currently running tasks.
 func (t *TaskService) GetRunningTasks() ([]*RunningTask, error) {
-	var (
-		err          error
-		runningTasks []*RunningTask
-	)
+	var runningTasks []*RunningTask
 
-	runningTasksObj := oleutil.MustCallMethod(t.taskServiceObj, "GetRunningTasks", TASK_ENUM_HIDDEN).ToIDispatch()
+	res, err := oleutil.CallMethod(t.taskServiceObj, "GetRunningTasks", TASK_ENUM_HIDDEN)
+	if err != nil {
+		return nil, err
+	}
+	runningTasksObj := res.ToIDispatch()
 	defer runningTasksObj.Release()
 	err = oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
@@ -154,7 +159,11 @@ func (t *TaskService) GetRegisteredTasks() ([]*RegisteredTask, error) {
 	)
 
 	// get tasks from root folder
-	rootTaskCollection := oleutil.MustCallMethod(t.rootFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	res, err := oleutil.CallMethod(t.rootFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN))
+	if err != nil {
+		return nil, fmt.Errorf("error getting tasks of root folder: %v", err)
+	}
+	rootTaskCollection := res.ToIDispatch()
 	defer rootTaskCollection.Release()
 	err = oleutil.ForEach(rootTaskCollection, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
@@ -171,7 +180,11 @@ func (t *TaskService) GetRegisteredTasks() ([]*RegisteredTask, error) {
 		return nil, err
 	}
 
-	taskFolderList := oleutil.MustCallMethod(t.rootFolderObj, "GetFolders", 0).ToIDispatch()
+	res, err = oleutil.CallMethod(t.rootFolderObj, "GetFolders", 0)
+	if err != nil {
+		return nil, fmt.Errorf("error getting task folders of root folder: %v", err)
+	}
+	taskFolderList := res.ToIDispatch()
 	defer taskFolderList.Release()
 
 	// recursively enumerate folders and tasks
@@ -180,16 +193,19 @@ func (t *TaskService) GetRegisteredTasks() ([]*RegisteredTask, error) {
 		taskFolder := v.ToIDispatch()
 		defer taskFolder.Release()
 
-		taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+		res, err := oleutil.CallMethod(taskFolder, "GetTasks", int(TASK_ENUM_HIDDEN))
+		if err != nil {
+			return fmt.Errorf("error getting tasks of folder: %v", err)
+		}
+		taskCollection := res.ToIDispatch()
 		defer taskCollection.Release()
 
-		var err error
 		err = oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
 			task := v.ToIDispatch()
 
 			registeredTask, path, err := parseRegisteredTask(task)
 			if err != nil {
-				return fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
+				return fmt.Errorf("error parsing %s IRegisteredTask object: %v", path, err)
 			}
 			registeredTasks = append(registeredTasks, registeredTask)
 
@@ -199,7 +215,11 @@ func (t *TaskService) GetRegisteredTasks() ([]*RegisteredTask, error) {
 			return err
 		}
 
-		taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
+		res, err = oleutil.CallMethod(taskFolder, "GetFolders", 0)
+		if err != nil {
+			return fmt.Errorf("error getting subfolders of folder: %v", err)
+		}
+		taskFolderList := res.ToIDispatch()
 		defer taskFolderList.Release()
 
 		err = oleutil.ForEach(taskFolderList, enumTaskFolders)
@@ -280,10 +300,14 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 	}
 
 	// get tasks from the top folder
-	var topFolder TaskFolder
-	topFolderTaskCollection := oleutil.MustCallMethod(topFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	res, err := oleutil.CallMethod(topFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN))
+	if err != nil {
+		return nil, fmt.Errorf("error getting tasks of folder %s: %v", path, err)
+	}
+	topFolderTaskCollection := res.ToIDispatch()
 	defer topFolderTaskCollection.Release()
-	err := oleutil.ForEach(topFolderTaskCollection, func(v *ole.VARIANT) error {
+	var topFolder TaskFolder
+	err = oleutil.ForEach(topFolderTaskCollection, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
 
 		registeredTask, path, err := parseRegisteredTask(task)
@@ -298,7 +322,11 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 		return nil, err
 	}
 
-	taskFolderList := oleutil.MustCallMethod(topFolderObj, "GetFolders", 0).ToIDispatch()
+	res, err = oleutil.CallMethod(topFolderObj, "GetFolders", 0)
+	if err != nil {
+		return nil, fmt.Errorf("error getting subfolders of folder %s: %v", path, err)
+	}
+	taskFolderList := res.ToIDispatch()
 	defer taskFolderList.Release()
 
 	// recursively enumerate folders and tasks
@@ -311,7 +339,11 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 
 			name := oleutil.MustGetProperty(taskFolder, "Name").ToString()
 			path := oleutil.MustGetProperty(taskFolder, "Path").ToString()
-			taskCollection := oleutil.MustCallMethod(taskFolder, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+			res, err := oleutil.CallMethod(taskFolder, "GetTasks", int(TASK_ENUM_HIDDEN))
+			if err != nil {
+				return fmt.Errorf("error getting tasks of folder %s: %v", path, err)
+			}
+			taskCollection := res.ToIDispatch()
 			defer taskCollection.Release()
 
 			taskSubFolder := &TaskFolder{
@@ -319,7 +351,6 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 				Path: path,
 			}
 
-			var err error
 			err = oleutil.ForEach(taskCollection, func(v *ole.VARIANT) error {
 				task := v.ToIDispatch()
 
@@ -337,7 +368,11 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 
 			parentFolder.SubFolders = append(parentFolder.SubFolders, *taskSubFolder)
 
-			taskFolderList := oleutil.MustCallMethod(taskFolder, "GetFolders", 0).ToIDispatch()
+			res, err = oleutil.CallMethod(taskFolder, "GetFolders", 0)
+			if err != nil {
+				return fmt.Errorf("error getting subfolders of folder %s: %v", path, err)
+			}
+			taskFolderList := res.ToIDispatch()
 			defer taskFolderList.Release()
 
 			err = oleutil.ForEach(taskFolderList, initEnumTaskFolders(taskSubFolder))
@@ -486,8 +521,6 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 }
 
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
-	var err error
-
 	if newTaskDef.Actions == nil {
 		return nil, errors.New("task must have at least one action")
 	}
@@ -501,7 +534,11 @@ func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, p
 		newTaskDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
 	}
 
-	newTaskDefObj := oleutil.MustCallMethod(t.taskServiceObj, "NewTask", 0).ToIDispatch()
+	res, err := oleutil.CallMethod(t.taskServiceObj, "NewTask", 0)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new task: %v", err)
+	}
+	newTaskDefObj := res.ToIDispatch()
 	defer newTaskDefObj.Release()
 
 	err = fillDefinitionObj(newTaskDef, newTaskDefObj)
@@ -548,13 +585,21 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 
 	taskFolderObj := taskFolder.ToIDispatch()
 	defer taskFolderObj.Release()
-	taskCollection := oleutil.MustCallMethod(taskFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	res, err := oleutil.CallMethod(taskFolderObj, "GetTasks", int(TASK_ENUM_HIDDEN))
+	if err != nil {
+		return false, fmt.Errorf("error getting tasks of root folder: %v", err)
+	}
+	taskCollection := res.ToIDispatch()
 	defer taskCollection.Release()
 	if !deleteRecursively && oleutil.MustGetProperty(taskCollection, "Count").Val > 0 {
 		return false, nil
 	}
 
-	folderCollection := oleutil.MustCallMethod(taskFolderObj, "GetFolders", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+	res, err = oleutil.CallMethod(taskFolderObj, "GetFolders", int(TASK_ENUM_HIDDEN))
+	if err != nil {
+		return false, fmt.Errorf("error getting the root folder: %v", err)
+	}
+	folderCollection := res.ToIDispatch()
 	defer folderCollection.Release()
 	if !deleteRecursively && oleutil.MustGetProperty(folderCollection, "Count").Val > 0 {
 		return false, nil
@@ -582,7 +627,11 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 			folderObj := v.ToIDispatch()
 			defer folderObj.Release()
 
-			tasks := oleutil.MustCallMethod(folderObj, "GetTasks", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+			res, err := oleutil.CallMethod(folderObj, "GetTasks", int(TASK_ENUM_HIDDEN))
+			if err != nil {
+				return fmt.Errorf("error getting tasks of root folder: %v", err)
+			}
+			tasks := res.ToIDispatch()
 			defer tasks.Release()
 
 			err = oleutil.ForEach(tasks, deleteAllTasks)
@@ -590,7 +639,11 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 				return err
 			}
 
-			subFolders := oleutil.MustCallMethod(folderObj, "GetFolders", int(TASK_ENUM_HIDDEN)).ToIDispatch()
+			res, err = oleutil.CallMethod(folderObj, "GetFolders", int(TASK_ENUM_HIDDEN))
+			if err != nil {
+				return fmt.Errorf("error getting subfolders of a folder: %v", err)
+			}
+			subFolders := res.ToIDispatch()
 			defer subFolders.Release()
 
 			err = oleutil.ForEach(subFolders, deleteTasksRecursively)
