@@ -42,7 +42,7 @@ func parseRunningTask(task *ole.IDispatch) *RunningTask {
 	runningTask := &RunningTask{
 		taskObj:       task,
 		CurrentAction: currentAction.ToString(),
-		EnginePID:     int(enginePID.Val),
+		EnginePID:     uint(enginePID.Val),
 		InstanceGUID:  instanceGUID.ToString(),
 		Name:          name.ToString(),
 		Path:          path.ToString(),
@@ -59,10 +59,10 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 	path := oleutil.MustGetProperty(task, "Path").ToString()
 	enabled := oleutil.MustGetProperty(task, "Enabled").Value().(bool)
 	state := TaskState(oleutil.MustGetProperty(task, "State").Val)
-	missedRuns := int(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
+	missedRuns := uint(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
 	nextRunTime := oleutil.MustGetProperty(task, "NextRunTime").Value().(time.Time)
 	lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
-	lastTaskResult := int(oleutil.MustGetProperty(task, "LastTaskResult").Val)
+	lastTaskResult := uint(oleutil.MustGetProperty(task, "LastTaskResult").Val)
 
 	definition := oleutil.MustGetProperty(task, "Definition").ToIDispatch()
 	defer definition.Release()
@@ -265,8 +265,8 @@ func parseTaskSettings(settings *ole.IDispatch) (*TaskSettings, error) {
 	id := oleutil.MustGetProperty(networkSettings, "Id").ToString()
 	name := oleutil.MustGetProperty(networkSettings, "Name").ToString()
 
-	priority := int(oleutil.MustGetProperty(settings, "Priority").Val)
-	restartCount := int(oleutil.MustGetProperty(settings, "RestartCount").Val)
+	priority := uint(oleutil.MustGetProperty(settings, "Priority").Val)
+	restartCount := uint(oleutil.MustGetProperty(settings, "RestartCount").Val)
 	restartInterval, err := StringToPeriod(oleutil.MustGetProperty(settings, "RestartInterval").ToString())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing RestartInterval field: %s", err)

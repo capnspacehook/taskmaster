@@ -256,9 +256,19 @@ const (
 	EveryOtherWeek WeekInterval = 2
 )
 
+func (w WeekInterval) String() string {
+	if w == EveryWeek {
+		return "Every week"
+	} else if w == EveryOtherWeek {
+		return "Every other week"
+	}
+
+	return "Invalid week interval"
+}
+
 // TaskActionType specifies the type of a task action.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_action_type
-type TaskActionType int
+type TaskActionType uint
 
 const (
 	TASK_ACTION_EXEC         TaskActionType = 0
@@ -270,13 +280,13 @@ const (
 func (t TaskActionType) String() string {
 	switch t {
 	case TASK_ACTION_EXEC:
-		return "exec"
+		return "Exec"
 	case TASK_ACTION_COM_HANDLER:
-		return "com handler"
+		return "COM Handler"
 	case TASK_ACTION_SEND_EMAIL:
-		return "send email"
+		return "Send Email"
 	case TASK_ACTION_SHOW_MESSAGE:
-		return "show message"
+		return "Show Message"
 	default:
 		return ""
 	}
@@ -284,7 +294,7 @@ func (t TaskActionType) String() string {
 
 // TaskCompatibility specifies the compatibility of a registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_compatibility
-type TaskCompatibility int
+type TaskCompatibility uint
 
 const (
 	TASK_COMPATIBILITY_AT TaskCompatibility = iota
@@ -298,7 +308,7 @@ const (
 
 // TaskCreationFlags specifies how a task will be created.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_creation
-type TaskCreationFlags int
+type TaskCreationFlags uint
 
 const (
 	TASK_VALIDATE_ONLY                TaskCreationFlags = 0x01
@@ -312,7 +322,7 @@ const (
 
 // TaskEnumFlags specifies how tasks will be enumerated.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_enum_flags
-type TaskEnumFlags int
+type TaskEnumFlags uint
 
 const (
 	TASK_ENUM_HIDDEN TaskEnumFlags = 1 // enumerate all tasks, including tasks that are hidden
@@ -321,7 +331,7 @@ const (
 // TaskInstancesPolicy specifies what the Task Scheduler service will do when
 // multiple instances of a task are triggered or operating at once.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_instances_policy
-type TaskInstancesPolicy int
+type TaskInstancesPolicy uint
 
 const (
 	TASK_INSTANCES_PARALLEL      TaskInstancesPolicy = iota // start new instance while an existing instance is running
@@ -333,13 +343,13 @@ const (
 func (t TaskInstancesPolicy) String() string {
 	switch t {
 	case TASK_INSTANCES_PARALLEL:
-		return "run parallel"
+		return "Run Parallel"
 	case TASK_INSTANCES_QUEUE:
-		return "queue instances"
+		return "Queue Instances"
 	case TASK_INSTANCES_IGNORE_NEW:
-		return "ignore new"
+		return "Ignore New"
 	case TASK_INSTANCES_STOP_EXISTING:
-		return "stop existing"
+		return "Stop Existing"
 	default:
 		return ""
 	}
@@ -347,7 +357,7 @@ func (t TaskInstancesPolicy) String() string {
 
 // TaskLogonType specifies how a registered task will authenticate when it executes.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_logon_type
-type TaskLogonType int
+type TaskLogonType uint
 
 const (
 	TASK_LOGON_NONE                          TaskLogonType = iota // the logon method is not specified. Used for non-NT credentials
@@ -362,19 +372,19 @@ const (
 func (t TaskLogonType) String() string {
 	switch t {
 	case TASK_LOGON_NONE:
-		return "none"
+		return "None"
 	case TASK_LOGON_PASSWORD:
-		return "password"
+		return "Password"
 	case TASK_LOGON_S4U:
-		return "s4u"
+		return "S4u"
 	case TASK_LOGON_INTERACTIVE_TOKEN:
-		return "interactive token"
+		return "Interactive Token"
 	case TASK_LOGON_GROUP:
-		return "group"
+		return "Group"
 	case TASK_LOGON_SERVICE_ACCOUNT:
-		return "service account"
+		return "Service Account"
 	case TASK_LOGON_INTERACTIVE_TOKEN_OR_PASSWORD:
-		return "interactive token or password"
+		return "Interactive Token or Password"
 	default:
 		return ""
 	}
@@ -382,19 +392,19 @@ func (t TaskLogonType) String() string {
 
 // TaskRunFlags specifies how a task will be executed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_run_flags
-type TaskRunFlags int
+type TaskRunFlags uint
 
 const (
-	TASK_RUN_NO_FLAGS           TaskRunFlags = 0 // the task is run with all flags ignored
-	TASK_RUN_AS_SELF            TaskRunFlags = 1 // the task is run as the user who is calling the Run method
-	TASK_RUN_IGNORE_CONSTRAINTS TaskRunFlags = 2 // the task is run regardless of constraints such as "do not run on batteries" or "run only if idle"
-	TASK_RUN_USE_SESSION_ID     TaskRunFlags = 4 // the task is run using a terminal server session identifier
-	TASK_RUN_USER_SID           TaskRunFlags = 8 // the task is run using a security identifier
+	TASK_RUN_NO_FLAGS           TaskRunFlags = 1 << iota // the task is run with all flags ignored
+	TASK_RUN_AS_SELF                                     // the task is run as the user who is calling the Run method
+	TASK_RUN_IGNORE_CONSTRAINTS                          // the task is run regardless of constraints such as "do not run on batteries" or "run only if idle"
+	TASK_RUN_USE_SESSION_ID                              // the task is run using a terminal server session identifier
+	TASK_RUN_USER_SID                                    // the task is run using a security identifier
 )
 
 // TaskRunLevel specifies whether the task will be run with full permissions or not.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_runlevel_type
-type TaskRunLevel int
+type TaskRunLevel uint
 
 const (
 	TASK_RUNLEVEL_LUA     TaskRunLevel = iota // task will be run with the least privileges
@@ -404,9 +414,9 @@ const (
 func (t TaskRunLevel) String() string {
 	switch t {
 	case TASK_RUNLEVEL_LUA:
-		return "least"
+		return "Least"
 	case TASK_RUNLEVEL_HIGHEST:
-		return "highest"
+		return "Highest"
 	default:
 		return ""
 	}
@@ -415,7 +425,7 @@ func (t TaskRunLevel) String() string {
 // TaskSessionStateChangeType specifies the type of session state change that a
 // SessionStateChange trigger will trigger on.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_session_state_change_type
-type TaskSessionStateChangeType int
+type TaskSessionStateChangeType uint
 
 const (
 	TASK_CONSOLE_CONNECT    TaskSessionStateChangeType = 1 // Terminal Server console connection state change. For example, when you connect to a user session on the local computer by switching users on the computer
@@ -429,17 +439,17 @@ const (
 func (t TaskSessionStateChangeType) String() string {
 	switch t {
 	case TASK_CONSOLE_CONNECT:
-		return "console connect"
+		return "Console Connect"
 	case TASK_CONSOLE_DISCONNECT:
-		return "console disconnect"
+		return "Console Disconnect"
 	case TASK_REMOTE_CONNECT:
-		return "remote connect"
+		return "Remote Connect"
 	case TASK_REMOTE_DISCONNECT:
-		return "remote disconnect"
+		return "Remote Disconnect"
 	case TASK_SESSION_LOCK:
-		return "session lock"
+		return "Session Lock"
 	case TASK_SESSION_UNLOCK:
-		return "session unlock"
+		return "Session Unlock"
 	default:
 		return ""
 	}
@@ -447,7 +457,7 @@ func (t TaskSessionStateChangeType) String() string {
 
 // TaskState specifies the state of a running or registered task.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_state
-type TaskState int
+type TaskState uint
 
 const (
 	TASK_STATE_UNKNOWN  TaskState = iota // the state of the task is unknown
@@ -460,15 +470,15 @@ const (
 func (t TaskState) String() string {
 	switch t {
 	case TASK_STATE_UNKNOWN:
-		return "unknown"
+		return "Unknown"
 	case TASK_STATE_DISABLED:
-		return "disabled"
+		return "Disabled"
 	case TASK_STATE_QUEUED:
-		return "queued"
+		return "Queued"
 	case TASK_STATE_READY:
-		return "ready"
+		return "Ready"
 	case TASK_STATE_RUNNING:
-		return "running"
+		return "Running"
 	default:
 		return ""
 	}
@@ -476,7 +486,7 @@ func (t TaskState) String() string {
 
 // TaskTriggerType specifies the type of a task trigger.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_trigger_type2
-type TaskTriggerType int
+type TaskTriggerType uint
 
 const (
 	TASK_TRIGGER_EVENT                TaskTriggerType = 0
@@ -496,29 +506,29 @@ const (
 func (t TaskTriggerType) String() string {
 	switch t {
 	case TASK_TRIGGER_EVENT:
-		return "event"
+		return "Event"
 	case TASK_TRIGGER_TIME:
-		return "time"
+		return "Time"
 	case TASK_TRIGGER_DAILY:
-		return "daily"
+		return "Daily"
 	case TASK_TRIGGER_WEEKLY:
-		return "weekly"
+		return "Weekly"
 	case TASK_TRIGGER_MONTHLY:
-		return "monthly"
+		return "Monthly"
 	case TASK_TRIGGER_MONTHLYDOW:
-		return "monthly day of the week"
+		return "Monthly Day of the Week"
 	case TASK_TRIGGER_IDLE:
-		return "idle"
+		return "Idle"
 	case TASK_TRIGGER_REGISTRATION:
 		return "registration"
 	case TASK_TRIGGER_BOOT:
-		return "boot"
+		return "Boot"
 	case TASK_TRIGGER_LOGON:
-		return "logon"
+		return "Logon"
 	case TASK_TRIGGER_SESSION_STATE_CHANGE:
-		return "session state change"
+		return "Session State Change"
 	case TASK_TRIGGER_CUSTOM_TRIGGER_01:
-		return "custom"
+		return "Custom"
 	default:
 		return ""
 	}
@@ -548,7 +558,7 @@ type RunningTask struct {
 	taskObj       *ole.IDispatch
 	isReleased    bool
 	CurrentAction string    // the name of the current action that the running task is performing
-	EnginePID     int       // the process ID for the engine (process) which is running the task
+	EnginePID     uint      // the process ID for the engine (process) which is running the task
 	InstanceGUID  string    // the GUID identifier for this instance of the task
 	Name          string    // the name of the task
 	Path          string    // the path to where the task is stored
@@ -565,10 +575,10 @@ type RegisteredTask struct {
 	Definition     Definition
 	Enabled        bool
 	State          TaskState // the operational state of the registered task
-	MissedRuns     int       // the number of times the registered task has missed a scheduled run
+	MissedRuns     uint      // the number of times the registered task has missed a scheduled run
 	NextRunTime    time.Time // the time when the registered task is next scheduled to run
 	LastRunTime    time.Time // the time the registered task was last run
-	LastTaskResult int       // the results that were returned the last time the registered task was run
+	LastTaskResult uint      // the results that were returned the last time the registered task was run
 }
 
 // Definition defines all the components of a task, such as the task settings, triggers, actions, and registration information
@@ -648,8 +658,8 @@ type TaskSettings struct {
 	IdleSettings
 	MultipleInstances TaskInstancesPolicy // defines how the Task Scheduler deals with multiple instances of the task
 	NetworkSettings
-	Priority                  int           // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Email, and MessageBox actions
-	RestartCount              int           // the number of times that the Task Scheduler will attempt to restart the task
+	Priority                  uint          // the priority level of the task, ranging from 0 - 10, where 0 is the highest priority, and 10 is the lowest. Only applies to ComHandler, Email, and MessageBox actions
+	RestartCount              uint          // the number of times that the Task Scheduler will attempt to restart the task
 	RestartInterval           period.Period // specifies how long the Task Scheduler will attempt to restart the task
 	RunOnlyIfIdle             bool          // indicates that the Task Scheduler will run the task only if the computer is in an idle condition
 	RunOnlyIfNetworkAvailable bool          // indicates that the Task Scheduler will run the task only when a network is available
