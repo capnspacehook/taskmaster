@@ -162,12 +162,7 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		workingDir := oleutil.MustGetProperty(action, "WorkingDirectory").ToString()
 
 		execAction := ExecAction{
-			TaskAction: TaskAction{
-				ID: id,
-				taskActionTypeHolder: taskActionTypeHolder{
-					actionType: actionType,
-				},
-			},
+			ID:         id,
 			Path:       path,
 			Args:       args,
 			WorkingDir: workingDir,
@@ -179,12 +174,7 @@ func parseTaskAction(action *ole.IDispatch) (Action, error) {
 		data := oleutil.MustGetProperty(action, "Data").ToString()
 
 		comHandlerAction := ComHandlerAction{
-			TaskAction: TaskAction{
-				ID: id,
-				taskActionTypeHolder: taskActionTypeHolder{
-					actionType: actionType,
-				},
-			},
+			ID:      id,
 			ClassID: classID,
 			Data:    data,
 		}
@@ -365,9 +355,6 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 			StopAtDurationEnd:  stopAtDurationEnd,
 		},
 		StartBoundary: startBoundary,
-		taskTriggerTypeHolder: taskTriggerTypeHolder{
-			triggerType: triggerType,
-		},
 	}
 
 	switch triggerType {

@@ -405,28 +405,23 @@ type Action interface {
 	GetType() TaskActionType
 }
 
-type taskActionTypeHolder struct {
-	actionType TaskActionType
-}
-
-type TaskAction struct {
-	ID string
-	taskActionTypeHolder
-}
-
-// ExecAction is an action that performs a command-line operation.
+// ExecAction is an action that performs a command-line operation. The args
+// field can have up to 32 $(ArgX) values, such as '/c $(Arg0) $(Arg1)'.
+// This will allow the arguments to be dynamically entered when the task is run.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iexecaction
 type ExecAction struct {
-	TaskAction
+	ID         string
 	Path       string
 	Args       string
 	WorkingDir string
 }
 
 // ComHandlerAction is an action that fires a COM handler. Can only be used if TASK_COMPATIBILITY_V2 or above is set.
+// The clisd parameter is the CLSID of the COM object that will get instantiated when the action executes, and the
+// data parameter is the arguments passed to the COM object.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-icomhandleraction
 type ComHandlerAction struct {
-	TaskAction
+	ID      string
 	ClassID string
 	Data    string
 }
@@ -507,10 +502,6 @@ type Trigger interface {
 	GetType() TaskTriggerType
 }
 
-type taskTriggerTypeHolder struct {
-	triggerType TaskTriggerType
-}
-
 // TaskTrigger provides the common properties that are inherited by all trigger objects.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-itrigger
 type TaskTrigger struct {
@@ -520,7 +511,6 @@ type TaskTrigger struct {
 	ID                 string        // the identifier for the trigger
 	RepetitionPattern
 	StartBoundary time.Time // the date and time when the trigger is activated
-	taskTriggerTypeHolder
 }
 
 // RepetitionPattern defines how often the task is run and how long the repetition pattern is repeated after the task is started.
@@ -643,16 +633,20 @@ func (t TaskService) GetConnectedUser() string {
 	return t.connectedUser
 }
 
-func (a TaskAction) GetID() string {
-	return a.ID
+func (e ExecAction) GetID() string {
+	return e.ID
 }
 
-func (t taskActionTypeHolder) GetType() TaskActionType {
-	return t.actionType
+func (ExecAction) GetType() TaskActionType {
+	return TASK_ACTION_EXEC
 }
 
-func (t taskTriggerTypeHolder) GetType() TaskTriggerType {
-	return t.triggerType
+func (c ComHandlerAction) GetID() string {
+	return c.ID
+}
+
+func (ComHandlerAction) GetType() TaskActionType {
+	return TASK_ACTION_COM_HANDLER
 }
 
 func (t TaskTrigger) GetRepetitionDuration() period.Period {
@@ -685,4 +679,52 @@ func (t TaskTrigger) GetStartBoundary() time.Time {
 
 func (t TaskTrigger) GetStopAtDurationEnd() bool {
 	return t.StopAtDurationEnd
+}
+
+func (BootTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_BOOT
+}
+
+func (DailyTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_DAILY
+}
+
+func (EventTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_EVENT
+}
+
+func (IdleTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_IDLE
+}
+
+func (LogonTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_LOGON
+}
+
+func (MonthlyDOWTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_MONTHLYDOW
+}
+
+func (MonthlyTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_MONTHLY
+}
+
+func (RegistrationTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_REGISTRATION
+}
+
+func (SessionStateChangeTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_SESSION_STATE_CHANGE
+}
+
+func (TimeTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_TIME
+}
+
+func (WeeklyTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_WEEKLY
+}
+
+func (CustomTrigger) GetType() TaskTriggerType {
+	return TASK_TRIGGER_CUSTOM_TRIGGER_01
 }

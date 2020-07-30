@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/rickb777/date/period"
 )
 
 func TestLocalConnect(t *testing.T) {
@@ -28,18 +26,21 @@ func TestCreateTask(t *testing.T) {
 
 	// test ExecAction
 	execTaskDef := taskService.NewTaskDefinition()
-	execTaskDef.AddExecAction("calc.exe", "", "", "")
+	popCalc := ExecAction{
+		Path: "calc.exe",
+	}
+	execTaskDef.AddAction(popCalc)
 
 	_, _, err = taskService.CreateTask("\\Taskmaster\\ExecAction", execTaskDef, true)
 	if err != nil {
 		t.Error(err)
 	}
 
-	defaultPeriod := period.NewHMS(0, 5, 0)
-
 	// test ComHandlerAction
 	comHandlerDef := taskService.NewTaskDefinition()
-	comHandlerDef.AddComHandlerAction("{F0001111-0000-0000-0000-0000FEEDACDC}", "", "")
+	comHandlerDef.AddAction(ComHandlerAction{
+		ClassID: "{F0001111-0000-0000-0000-0000FEEDACDC}",
+	})
 
 	_, _, err = taskService.CreateTask("\\Taskmaster\\ComHandlerAction", comHandlerDef, true)
 	if err != nil {
@@ -48,8 +49,8 @@ func TestCreateTask(t *testing.T) {
 
 	// test BootTrigger
 	bootTriggerDef := taskService.NewTaskDefinition()
-	bootTriggerDef.AddExecAction("calc.exe", "", "", "")
-	bootTriggerDef.AddBootTrigger(defaultPeriod)
+	bootTriggerDef.AddAction(popCalc)
+	bootTriggerDef.AddTrigger(BootTrigger{})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\BootTrigger", bootTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -57,8 +58,13 @@ func TestCreateTask(t *testing.T) {
 
 	// test DailyTrigger
 	dailyTriggerDef := taskService.NewTaskDefinition()
-	dailyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	dailyTriggerDef.AddDailyTrigger(EveryDay, defaultPeriod, time.Now())
+	dailyTriggerDef.AddAction(popCalc)
+	dailyTriggerDef.AddTrigger(DailyTrigger{
+		DayInterval: EveryDay,
+		TaskTrigger: TaskTrigger{
+			StartBoundary: time.Now(),
+		},
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\DailyTrigger", dailyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -66,9 +72,11 @@ func TestCreateTask(t *testing.T) {
 
 	// test EventTrigger
 	eventTriggerDef := taskService.NewTaskDefinition()
-	eventTriggerDef.AddExecAction("calc.exe", "", "", "")
+	eventTriggerDef.AddAction(popCalc)
 	subscription := "<QueryList> <Query Id='1'> <Select Path='System'>*[System/Level=2]</Select></Query></QueryList>"
-	eventTriggerDef.AddEventTrigger(defaultPeriod, subscription, nil)
+	eventTriggerDef.AddTrigger(EventTrigger{
+		Subscription: subscription,
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\EventTrigger", eventTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -76,8 +84,8 @@ func TestCreateTask(t *testing.T) {
 
 	// test IdleTrigger
 	idleTriggerDef := taskService.NewTaskDefinition()
-	idleTriggerDef.AddExecAction("calc.exe", "", "", "")
-	idleTriggerDef.AddIdleTrigger()
+	idleTriggerDef.AddAction(popCalc)
+	idleTriggerDef.AddTrigger(IdleTrigger{})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\IdleTrigger", idleTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -85,8 +93,8 @@ func TestCreateTask(t *testing.T) {
 
 	// test LogonTrigger
 	logonTriggerDef := taskService.NewTaskDefinition()
-	logonTriggerDef.AddExecAction("calc.exe", "", "", "")
-	logonTriggerDef.AddLogonTrigger(defaultPeriod, "")
+	logonTriggerDef.AddAction(popCalc)
+	logonTriggerDef.AddTrigger(LogonTrigger{})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\LogonTrigger", logonTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -94,8 +102,15 @@ func TestCreateTask(t *testing.T) {
 
 	// test MonthlyDOWTrigger
 	monthlyDOWTriggerDef := taskService.NewTaskDefinition()
-	monthlyDOWTriggerDef.AddExecAction("calc.exe", "", "", "")
-	monthlyDOWTriggerDef.AddMonthlyDOWTrigger(Monday|Friday, First, January|February, false, defaultPeriod, time.Now())
+	monthlyDOWTriggerDef.AddAction(popCalc)
+	monthlyDOWTriggerDef.AddTrigger(MonthlyDOWTrigger{
+		DaysOfWeek:   Monday | Friday,
+		WeeksOfMonth: First,
+		MonthsOfYear: January | February,
+		TaskTrigger: TaskTrigger{
+			StartBoundary: time.Now(),
+		},
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyDOWTrigger", monthlyDOWTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -103,8 +118,14 @@ func TestCreateTask(t *testing.T) {
 
 	// test MonthlyTrigger
 	monthlyTriggerDef := taskService.NewTaskDefinition()
-	monthlyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	monthlyTriggerDef.AddMonthlyTrigger(3, February|March, defaultPeriod, time.Now())
+	monthlyTriggerDef.AddAction(popCalc)
+	monthlyTriggerDef.AddTrigger(MonthlyTrigger{
+		DaysOfMonth:  3,
+		MonthsOfYear: February | March,
+		TaskTrigger: TaskTrigger{
+			StartBoundary: time.Now(),
+		},
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\MonthlyTrigger", monthlyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -112,8 +133,8 @@ func TestCreateTask(t *testing.T) {
 
 	// test RegistrationTrigger
 	registrationTriggerDef := taskService.NewTaskDefinition()
-	registrationTriggerDef.AddExecAction("calc.exe", "", "", "")
-	registrationTriggerDef.AddRegistrationTrigger(defaultPeriod)
+	registrationTriggerDef.AddAction(popCalc)
+	registrationTriggerDef.AddTrigger(RegistrationTrigger{})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\RegistrationTrigger", registrationTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -121,8 +142,10 @@ func TestCreateTask(t *testing.T) {
 
 	// test SessionStateChangeTrigger
 	sessionStateChangeTriggerDef := taskService.NewTaskDefinition()
-	sessionStateChangeTriggerDef.AddExecAction("calc.exe", "", "", "")
-	sessionStateChangeTriggerDef.AddSessionStateChangeTrigger("", TASK_SESSION_LOCK, defaultPeriod)
+	sessionStateChangeTriggerDef.AddAction(popCalc)
+	sessionStateChangeTriggerDef.AddTrigger(SessionStateChangeTrigger{
+		StateChange: TASK_SESSION_LOCK,
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\SessionStateChangeTrigger", sessionStateChangeTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -130,8 +153,12 @@ func TestCreateTask(t *testing.T) {
 
 	// test TimeTrigger
 	timeTriggerDef := taskService.NewTaskDefinition()
-	timeTriggerDef.AddExecAction("calc.exe", "", "", "")
-	timeTriggerDef.AddTimeTrigger(defaultPeriod, time.Now())
+	timeTriggerDef.AddAction(popCalc)
+	timeTriggerDef.AddTrigger(TimeTrigger{
+		TaskTrigger: TaskTrigger{
+			StartBoundary: time.Now(),
+		},
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\TimeTrigger", timeTriggerDef, true)
 	if err != nil {
 		t.Error(err)
@@ -139,8 +166,14 @@ func TestCreateTask(t *testing.T) {
 
 	// test WeeklyTrigger
 	weeklyTriggerDef := taskService.NewTaskDefinition()
-	weeklyTriggerDef.AddExecAction("calc.exe", "", "", "")
-	weeklyTriggerDef.AddWeeklyTrigger(Tuesday|Thursday, EveryOtherWeek, defaultPeriod, time.Now())
+	weeklyTriggerDef.AddAction(popCalc)
+	weeklyTriggerDef.AddTrigger(WeeklyTrigger{
+		DaysOfWeek:   Tuesday | Thursday,
+		WeekInterval: EveryOtherWeek,
+		TaskTrigger: TaskTrigger{
+			StartBoundary: time.Now(),
+		},
+	})
 	_, _, err = taskService.CreateTask("\\Taskmaster\\WeeklyTrigger", weeklyTriggerDef, true)
 	if err != nil {
 		t.Error(err)
