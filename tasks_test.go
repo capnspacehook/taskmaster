@@ -36,7 +36,7 @@ func TestRefreshRunningTask(t *testing.T) {
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTask, err := testTask.Run([]string{"1"})
+	runningTask, err := testTask.Run([]string{"3"})
 	if err != nil {
 		t.Error(err)
 	}
