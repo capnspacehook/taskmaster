@@ -3,6 +3,8 @@
 package taskmaster
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-ole/go-ole"
@@ -10,64 +12,244 @@ import (
 )
 
 // Day is a day of the week.
-type Day int
+type Day uint16
 
 const (
-	Sunday    Day = 0x01
-	Monday    Day = 0x02
-	Tuesday   Day = 0x04
-	Wednesday Day = 0x08
-	Thursday  Day = 0x10
-	Friday    Day = 0x20
-	Saturday  Day = 0x40
+	Sunday Day = 1 << iota
+	Monday
+	Tuesday
+	Wednesday
+	Thursday
+	Friday
+	Saturday
+	AllDays Day = (1 << 7) - 1
 )
 
+func (d Day) String() string {
+	if d == 0 || d > AllDays {
+		return "Invalid day of week"
+	} else if d == AllDays {
+		return "All days of the week"
+	}
+
+	var buf strings.Builder
+	if Sunday&d == Sunday {
+		buf.WriteString("Sunday, ")
+	}
+	if Monday&d == Monday {
+		buf.WriteString("Monday, ")
+	}
+	if Tuesday&d == Tuesday {
+		buf.WriteString("Tuesday, ")
+	}
+	if Wednesday&d == Wednesday {
+		buf.WriteString("Wednesday, ")
+	}
+	if Thursday&d == Thursday {
+		buf.WriteString("Thursday, ")
+	}
+	if Friday&d == Friday {
+		buf.WriteString("Friday, ")
+	}
+	if Saturday&d == Saturday {
+		buf.WriteString("Saturday, ")
+	}
+
+	s := buf.String()
+	return s[:len(s)-2]
+}
+
 // DayInterval specifies if a task runs every day or every other day.
-type DayInterval int
+type DayInterval uint8
 
 const (
 	EveryDay      DayInterval = 1
 	EveryOtherDay DayInterval = 2
 )
 
+func (d DayInterval) String() string {
+	if d == EveryDay {
+		return "Every day"
+	} else if d == EveryOtherDay {
+		return "Every other day"
+	}
+
+	return "Invalid day interval"
+}
+
 // DayOfMonth is a day of a month.
-type DayOfMonth int
+type DayOfMonth uint32
 
 const (
-	LastDayOfMonth = 32
+	One DayOfMonth = 1 << iota
+	Two
+	Three
+	Four
+	Five
+	Six
+	Seven
+	Eight
+	Nine
+	Ten
+	Eleven
+	Twelve
+	Thirteen
+	Fourteen
+	Fifteen
+	Sixteen
+	Seventeen
+	Eighteen
+	Nineteen
+	Twenty
+	TwentyOne
+	TwentyTwo
+	TwentyThree
+	TwentyFour
+	TwentyFive
+	TwentySix
+	TwentySeven
+	TwentyEight
+	TwentyNine
+	Thirty
+	ThirtyOne
+	LastDayOfMonth
+	AllDaysOfMonth DayOfMonth = (1 << 31) - 1
 )
+
+func (d DayOfMonth) String() string {
+	if d == 0 || d > LastDayOfMonth {
+		return "Invalid day of month"
+	} else if d == AllDaysOfMonth {
+		return "All days of the month"
+	}
+
+	var buf strings.Builder
+	for i, j := DayOfMonth(1), uint(1); i < LastDayOfMonth; i, j = (1<<j+1)-1, j+1 {
+		if d&i == i {
+			buf.WriteString(strconv.FormatInt(int64(j), 10))
+			buf.WriteString(", ")
+		}
+	}
+
+	if d&LastDayOfMonth == LastDayOfMonth {
+		buf.WriteString("last day of month")
+		return buf.String()
+	}
+
+	s := buf.String()
+	return s[:len(s)-2]
+}
 
 // Month is one of the 12 months.
-type Month int
+type Month uint16
 
 const (
-	January   Month = 0x01
-	February  Month = 0x02
-	March     Month = 0x04
-	April     Month = 0x08
-	May       Month = 0x10
-	June      Month = 0x20
-	July      Month = 0x40
-	August    Month = 0x80
-	September Month = 0x100
-	October   Month = 0x200
-	November  Month = 0x400
-	December  Month = 0x800
+	January Month = 1 << iota
+	February
+	March
+	April
+	May
+	June
+	July
+	August
+	September
+	October
+	November
+	December
+	AllMonths Month = (1 << 12) - 1
 )
+
+func (m Month) String() string {
+	if m == 0 || m > AllMonths {
+		return "Invalid month"
+	} else if m == AllMonths {
+		return "All months"
+	}
+
+	var buf strings.Builder
+	if m&January == January {
+		buf.WriteString("January, ")
+	}
+	if m&February == February {
+		buf.WriteString("February, ")
+	}
+	if m&March == March {
+		buf.WriteString("March, ")
+	}
+	if m&April == April {
+		buf.WriteString("April, ")
+	}
+	if m&May == May {
+		buf.WriteString("May, ")
+	}
+	if m&June == June {
+		buf.WriteString("June, ")
+	}
+	if m&July == July {
+		buf.WriteString("July, ")
+	}
+	if m&August == August {
+		buf.WriteString("August, ")
+	}
+	if m&September == September {
+		buf.WriteString("September, ")
+	}
+	if m&October == October {
+		buf.WriteString("October, ")
+	}
+	if m&November == November {
+		buf.WriteString("November, ")
+	}
+	if m&December == December {
+		buf.WriteString("December, ")
+	}
+
+	s := buf.String()
+	return s[:len(s)-2]
+}
 
 // Week specifies what week of the month a task will run on.
-type Week int
+type Week uint8
 
 const (
-	First  Week = 0x01
-	Second Week = 0x02
-	Third  Week = 0x04
-	Fourth Week = 0x08
-	Last   Week = 0x10
+	First Week = 1 << iota
+	Second
+	Third
+	Fourth
+	LastWeek
+	AllWeeks Week = (1 << 5) - 1
 )
 
+func (w Week) String() string {
+	if w == 0 || w > AllWeeks {
+		return "Invalid week of the month"
+	} else if w == AllWeeks {
+		return "All weeks of the month"
+	}
+
+	var buf strings.Builder
+	if First&w == First {
+		buf.WriteString("First, ")
+	}
+	if Second&w == Second {
+		buf.WriteString("Second, ")
+	}
+	if Third&w == Third {
+		buf.WriteString("Third, ")
+	}
+	if Fourth&w == Fourth {
+		buf.WriteString("Fourth, ")
+	}
+	if LastWeek&w == LastWeek {
+		buf.WriteString("LastWeek, ")
+	}
+
+	s := buf.String()
+	return s[:len(s)-2]
+}
+
 // WeekInterval specifies if a task runs every week or every other week.
-type WeekInterval int
+type WeekInterval uint8
 
 const (
 	EveryWeek      WeekInterval = 1
