@@ -119,17 +119,21 @@ func ConnectWithOptions(serverName, domain, username, password string) (*TaskSer
 // If this function is not called before the parent program terminates,
 // memory leaks will occur.
 func (t *TaskService) Disconnect() {
-	t.taskServiceObj.Release()
-	t.rootFolderObj.Release()
-	ole.CoUninitialize()
+	if t.isConnected {
+		t.taskServiceObj.Release()
+		t.rootFolderObj.Release()
+	}
+	if t.isInitialized {
+		ole.CoUninitialize()
+	}
 
 	t.isInitialized = false
 	t.isConnected = false
 }
 
 // GetRunningTasks enumerates the Task Scheduler database for all currently running tasks.
-func (t *TaskService) GetRunningTasks() ([]*RunningTask, error) {
-	var runningTasks []*RunningTask
+func (t *TaskService) GetRunningTasks() (RunningTaskCollection, error) {
+	var runningTasks RunningTaskCollection
 
 	res, err := oleutil.CallMethod(t.taskServiceObj, "GetRunningTasks", TASK_ENUM_HIDDEN)
 	if err != nil {
@@ -152,10 +156,10 @@ func (t *TaskService) GetRunningTasks() ([]*RunningTask, error) {
 }
 
 // GetRegisteredTasks enumerates the Task Scheduler database for all currently registered tasks.
-func (t *TaskService) GetRegisteredTasks() ([]*RegisteredTask, error) {
+func (t *TaskService) GetRegisteredTasks() (RegisteredTaskCollection, error) {
 	var (
 		err             error
-		registeredTasks []*RegisteredTask
+		registeredTasks RegisteredTaskCollection
 	)
 
 	// get tasks from root folder
@@ -314,7 +318,7 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 		if err != nil {
 			return fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 		}
-		topFolder.RegisteredTasks = append(topFolder.RegisteredTasks, *registeredTask)
+		topFolder.RegisteredTasks = append(topFolder.RegisteredTasks, registeredTask)
 
 		return nil
 	})
@@ -358,7 +362,7 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 				if err != nil {
 					return fmt.Errorf("error parsing %s IRegisteredTask object: %s", path, err)
 				}
-				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, *registeredTask)
+				taskSubFolder.RegisteredTasks = append(taskSubFolder.RegisteredTasks, registeredTask)
 
 				return nil
 			})

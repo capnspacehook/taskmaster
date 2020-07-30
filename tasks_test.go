@@ -73,7 +73,7 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTasks := make([]*RunningTask, 5, 5)
+	runningTasks := make(RunningTaskCollection, 5, 5)
 
 	// create a few running tasks so that there will be multiple instances
 	// of the registered task running
@@ -100,9 +100,8 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 	}
 
 	time.Sleep(3 * time.Second)
-	for _, rTask := range runningTasks {
-		rTask.Release()
-	}
+	runningTasks.Release()
+	instances.Release()
 }
 
 func TestStopRegisteredTask(t *testing.T) {

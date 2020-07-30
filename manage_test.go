@@ -222,10 +222,11 @@ func TestGetRegisteredTasks(t *testing.T) {
 	}
 	defer taskService.Disconnect()
 
-	_, err = taskService.GetRegisteredTasks()
+	rtc, err := taskService.GetRegisteredTasks()
 	if err != nil {
 		t.Error(err)
 	}
+	rtc.Release()
 }
 
 func TestGetTaskFolders(t *testing.T) {
@@ -235,10 +236,11 @@ func TestGetTaskFolders(t *testing.T) {
 	}
 	defer taskService.Disconnect()
 
-	_, err = taskService.GetTaskFolders()
+	tf, err := taskService.GetTaskFolders()
 	if err != nil {
 		t.Error(err)
 	}
+	tf.Release()
 }
 
 func TestDeleteTask(t *testing.T) {

@@ -36,8 +36,7 @@ func (r *RunningTask) Stop() error {
 		return fmt.Errorf("error calling Stop on %s IRunningTask: %s", r.Path, err)
 	}
 
-	r.taskObj.Release()
-	r.isReleased = true
+	r.Release()
 
 	return nil
 }
@@ -45,7 +44,7 @@ func (r *RunningTask) Stop() error {
 // Release frees the running task COM object. Must be called before
 // program termination to avoid memory leaks.
 func (r *RunningTask) Release() {
-	if !r.isReleased {
+	if !r.isReleased && r.taskObj != nil {
 		r.taskObj.Release()
 		r.isReleased = true
 	}
@@ -79,7 +78,7 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 // GetInstances returns all of the currently running instances of a registered task.
 // The returned slice may contain nil entries if tasks are stopped while they are being parsed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-getinstances
-func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
+func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
 	if err != nil {
 		return nil, fmt.Errorf("error calling GetInstances on %s IRegisteredTask: %s", r.Path, err)
@@ -87,7 +86,7 @@ func (r *RegisteredTask) GetInstances() ([]*RunningTask, error) {
 
 	runningTasksObj := runningTasks.ToIDispatch()
 	defer runningTasksObj.Release()
-	var parsedRunningTasks []*RunningTask
+	var parsedRunningTasks RunningTaskCollection
 
 	oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
 		runningTaskObj := v.ToIDispatch()
@@ -112,4 +111,49 @@ func (r *RegisteredTask) Stop() error {
 	}
 
 	return nil
+}
+
+// Release frees the registered task COM object. Must be called before
+// program termination to avoid memory leaks.
+func (r *RegisteredTask) Release() {
+	if !r.isReleased && r.taskObj != nil {
+		r.taskObj.Release()
+		r.isReleased = true
+	}
+}
+
+// RunningTaskCollection is a collection of running tasks.
+type RunningTaskCollection []*RunningTask
+
+// Release frees all the running task COM objects in the collection.
+// Must be called before program termination to avoid memory leaks.
+func (r RunningTaskCollection) Release() {
+	for _, runningTask := range r {
+		runningTask.Release()
+	}
+}
+
+// RegisteredTaskCollection is a collection of registered tasks.
+type RegisteredTaskCollection []*RegisteredTask
+
+// Release frees all the registered task COM objects in the collection.
+// Must be called before program termination to avoid memory leaks.
+func (r RegisteredTaskCollection) Release() {
+	for _, registeredTask := range r {
+		registeredTask.Release()
+	}
+}
+
+// Release frees all the registered task COM objects in the folder and
+// all subfolders. Must be called before program termination to avoid
+// memory leaks.
+func (f *TaskFolder) Release() {
+	if !f.isReleased {
+		f.RegisteredTasks.Release()
+		for _, subFolder := range f.SubFolders {
+			subFolder.RegisteredTasks.Release()
+		}
+
+		f.isReleased = true
+	}
 }

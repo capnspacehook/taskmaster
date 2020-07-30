@@ -353,10 +353,11 @@ type TaskService struct {
 }
 
 type TaskFolder struct {
+	isReleased      bool
 	Name            string
 	Path            string
 	SubFolders      []TaskFolder
-	RegisteredTasks []RegisteredTask
+	RegisteredTasks RegisteredTaskCollection
 }
 
 // RunningTask is a task that is currently running.
@@ -376,6 +377,7 @@ type RunningTask struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iregisteredtask
 type RegisteredTask struct {
 	taskObj        *ole.IDispatch
+	isReleased     bool
 	Name           string // the name of the registered task
 	Path           string // the path to where the registered task is stored
 	Definition     Definition
