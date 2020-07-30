@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func createTestTask(taskSvc *TaskService) *RegisteredTask {
+func createTestTask(taskSvc TaskService) RegisteredTask {
 	newTaskDef := taskSvc.NewTaskDefinition()
 	newTaskDef.AddAction(ExecAction{
 		Path: "cmd.exe",

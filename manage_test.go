@@ -207,9 +207,6 @@ func TestUpdateTask(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if testTask == nil {
-		t.Error("TestTask task should exist")
-	}
 	if testTask.Definition.RegistrationInfo.Author != "Big Chungus" {
 		t.Error("task was not updated")
 	}
@@ -260,9 +257,7 @@ func TestDeleteTask(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if deletedTask != nil {
-		t.Error("task should be deleted")
-	}
+	deletedTask.Release()
 }
 
 func TestDeleteFolder(t *testing.T) {
@@ -298,7 +293,7 @@ func TestDeleteFolder(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if taskmasterFolder != nil {
+	if taskmasterFolder.Name != "" {
 		t.Error("folder shouldn't exist")
 	}
 	for _, task := range tasks {

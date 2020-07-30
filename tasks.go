@@ -53,26 +53,24 @@ func (r *RunningTask) Release() {
 // Run starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-run
-func (r *RegisteredTask) Run(args []string) (*RunningTask, error) {
+func (r *RegisteredTask) Run(args []string) (RunningTask, error) {
 	return r.RunEx(args, TASK_RUN_AS_SELF, 0, "")
 }
 
 // RunEx starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-runex
-func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int, user string) (*RunningTask, error) {
+func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int, user string) (RunningTask, error) {
 	if !r.Enabled {
-		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: cannot run a disabled task", r.Path)
+		return RunningTask{}, fmt.Errorf("error calling RunEx on %s IRegisteredTask: cannot run a disabled task", r.Path)
 	}
 
 	runningTaskObj, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)
 	if err != nil {
-		return nil, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
+		return RunningTask{}, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
 	}
 
-	runningTask := parseRunningTask(runningTaskObj.ToIDispatch())
-
-	return runningTask, nil
+	return parseRunningTask(runningTaskObj.ToIDispatch())
 }
 
 // GetInstances returns all of the currently running instances of a registered task.
@@ -91,7 +89,10 @@ func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 	oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
 		runningTaskObj := v.ToIDispatch()
 
-		parsedRunningTask := parseRunningTask(runningTaskObj)
+		parsedRunningTask, err := parseRunningTask(runningTaskObj)
+		if err != nil {
+			return fmt.Errorf("error parsing running task: %v", err)
+		}
 		parsedRunningTasks = append(parsedRunningTasks, parsedRunningTask)
 
 		return nil
@@ -123,7 +124,7 @@ func (r *RegisteredTask) Release() {
 }
 
 // RunningTaskCollection is a collection of running tasks.
-type RunningTaskCollection []*RunningTask
+type RunningTaskCollection []RunningTask
 
 // Release frees all the running task COM objects in the collection.
 // Must be called before program termination to avoid memory leaks.
@@ -134,7 +135,7 @@ func (r RunningTaskCollection) Release() {
 }
 
 // RegisteredTaskCollection is a collection of registered tasks.
-type RegisteredTaskCollection []*RegisteredTask
+type RegisteredTaskCollection []RegisteredTask
 
 // Release frees all the registered task COM objects in the collection.
 // Must be called before program termination to avoid memory leaks.

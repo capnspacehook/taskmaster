@@ -11,35 +11,35 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 )
 
-func parseRunningTask(task *ole.IDispatch) *RunningTask {
+func parseRunningTask(task *ole.IDispatch) (RunningTask, error) {
 	var err error
 
 	currentAction, err := oleutil.GetProperty(task, "CurrentAction")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 	enginePID, err := oleutil.GetProperty(task, "EnginePid")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 	instanceGUID, err := oleutil.GetProperty(task, "InstanceGuid")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 	name, err := oleutil.GetProperty(task, "Name")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 	path, err := oleutil.GetProperty(task, "Path")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 	state, err := oleutil.GetProperty(task, "State")
 	if err != nil {
-		return nil
+		return RunningTask{}, err
 	}
 
-	runningTask := &RunningTask{
+	runningTask := RunningTask{
 		taskObj:       task,
 		CurrentAction: currentAction.ToString(),
 		EnginePID:     uint(enginePID.Val),
@@ -49,10 +49,10 @@ func parseRunningTask(task *ole.IDispatch) *RunningTask {
 		State:         TaskState(state.Val),
 	}
 
-	return runningTask
+	return runningTask, nil
 }
 
-func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
+func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
 	var err error
 
 	name := oleutil.MustGetProperty(task, "Name").ToString()
@@ -85,7 +85,7 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, path, fmt.Errorf("error parsing IAction object: %s", err)
+		return RegisteredTask{}, path, fmt.Errorf("error parsing IAction object: %s", err)
 	}
 
 	principal := oleutil.MustGetProperty(definition, "Principal").ToIDispatch()
@@ -96,14 +96,14 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 	defer regInfo.Release()
 	registrationInfo, err := parseRegistrationInfo(regInfo)
 	if err != nil {
-		return nil, path, fmt.Errorf("error parsing IRegistrationInfo object: %s", err)
+		return RegisteredTask{}, path, fmt.Errorf("error parsing IRegistrationInfo object: %s", err)
 	}
 
 	settings := oleutil.MustGetProperty(definition, "Settings").ToIDispatch()
 	defer settings.Release()
 	taskSettings, err := parseTaskSettings(settings)
 	if err != nil {
-		return nil, path, fmt.Errorf("error parsing ITaskSettings object: %s", err)
+		return RegisteredTask{}, path, fmt.Errorf("error parsing ITaskSettings object: %s", err)
 	}
 
 	triggers := oleutil.MustGetProperty(definition, "Triggers").ToIDispatch()
@@ -123,7 +123,7 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, path, fmt.Errorf("error parsing ITrigger object: %s", err)
+		return RegisteredTask{}, path, fmt.Errorf("error parsing ITrigger object: %s", err)
 	}
 
 	taskDef := Definition{
@@ -135,7 +135,7 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 		Triggers:         taskTriggers,
 	}
 
-	RegisteredTask := &RegisteredTask{
+	registeredTask := RegisteredTask{
 		taskObj:        task,
 		Name:           name,
 		Path:           path,
@@ -148,7 +148,7 @@ func parseRegisteredTask(task *ole.IDispatch) (*RegisteredTask, string, error) {
 		LastTaskResult: lastTaskResult,
 	}
 
-	return RegisteredTask, path, nil
+	return registeredTask, path, nil
 }
 
 func parseTaskAction(action *ole.IDispatch) (Action, error) {

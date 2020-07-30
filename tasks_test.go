@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func TestRelease(t *testing.T) {
+	var rt RunningTask
+	rt.Release()
+}
+
 func TestRunRegisteredTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
@@ -91,12 +96,6 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 
 	if len(instances) != 5 {
 		t.Errorf("should have 5 instances, got %d instead", len(instances))
-	}
-
-	for _, instance := range instances {
-		if instance == nil {
-			t.Error("no instances should be nil")
-		}
 	}
 
 	time.Sleep(3 * time.Second)
