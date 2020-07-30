@@ -435,7 +435,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return logonTrigger, nil
 	case TASK_TRIGGER_MONTHLYDOW:
-		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
+		daysOfWeek := DayOfWeek(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
 		monthsOfYear := Month(oleutil.MustGetProperty(trigger, "MonthsOfYear").Val)
 		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
 		if err != nil {
@@ -495,7 +495,7 @@ func parseTaskTrigger(trigger *ole.IDispatch) (Trigger, error) {
 
 		return timetrigger, nil
 	case TASK_TRIGGER_WEEKLY:
-		daysOfWeek := Day(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
+		daysOfWeek := DayOfWeek(oleutil.MustGetProperty(trigger, "DaysOfWeek").Val)
 		randomDelay, err := StringToPeriod(oleutil.MustGetProperty(trigger, "RandomDelay").ToString())
 		if err != nil {
 			return nil, fmt.Errorf("error parsing IWeeklyTrigger object: error parsing RandomDelay field: %s", err)

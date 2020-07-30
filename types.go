@@ -11,21 +11,21 @@ import (
 	"github.com/rickb777/date/period"
 )
 
-// Day is a day of the week.
-type Day uint16
+// DayOfWeek is a day of the week.
+type DayOfWeek uint16
 
 const (
-	Sunday Day = 1 << iota
+	Sunday DayOfWeek = 1 << iota
 	Monday
 	Tuesday
 	Wednesday
 	Thursday
 	Friday
 	Saturday
-	AllDays Day = (1 << 7) - 1
+	AllDays DayOfWeek = (1 << 7) - 1
 )
 
-func (d Day) String() string {
+func (d DayOfWeek) String() string {
 	if d == 0 || d > AllDays {
 		return "Invalid day of week"
 	} else if d == AllDays {
@@ -747,7 +747,7 @@ type LogonTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-imonthlydowtrigger
 type MonthlyDOWTrigger struct {
 	TaskTrigger
-	DaysOfWeek           Day           // the days of the week during which the task runs
+	DaysOfWeek           DayOfWeek     // the days of the week during which the task runs
 	MonthsOfYear         Month         // the months of the year during which the task runs
 	RandomDelay          period.Period // a delay time that is randomly added to the start time of the trigger
 	RunOnLastWeekOfMonth bool          // indicates that the task runs on the last week of the month
@@ -792,7 +792,7 @@ type TimeTrigger struct {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nn-taskschd-iweeklytrigger
 type WeeklyTrigger struct {
 	TaskTrigger
-	DaysOfWeek   Day           // the days of the week in which the task runs
+	DaysOfWeek   DayOfWeek     // the days of the week in which the task runs
 	RandomDelay  period.Period // a delay time that is randomly added to the start time of the trigger
 	WeekInterval WeekInterval  // the interval between the weeks in the schedule
 }

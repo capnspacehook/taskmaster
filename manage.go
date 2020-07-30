@@ -447,6 +447,8 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 
 	if path[0] != '\\' {
 		return nil, false, errors.New("path must start with root folder '\\'")
+	} else if err = validateDefinition(newTaskDef); err != nil {
+		return nil, false, err
 	}
 
 	nameIndex := strings.LastIndex(path, "\\")
@@ -504,6 +506,8 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 
 	if path[0] != '\\' {
 		return nil, errors.New("path must start with root folder '\\'")
+	} else if err = validateDefinition(newTaskDef); err != nil {
+		return nil, err
 	}
 
 	if !t.registeredTaskExist(path) {
@@ -525,14 +529,6 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 }
 
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
-	if newTaskDef.Actions == nil {
-		return nil, errors.New("task must have at least one action")
-	}
-
-	if newTaskDef.Principal.UserID != "" && newTaskDef.Principal.GroupID != "" {
-		return nil, errors.New("both UserId and GroupId are defined for the principal; they are mutually exclusive")
-	}
-
 	// set default UserID if UserID and GroupID both aren't set
 	if newTaskDef.Principal.UserID == "" && newTaskDef.Principal.GroupID == "" {
 		newTaskDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
