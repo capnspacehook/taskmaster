@@ -1,6 +1,6 @@
 version: "1.0.{build}"
 
-stack: go 1.11
+stack: go 1.14
 
 clone_folder: c:\gopath\src\github.com\capnspacehook\taskmaster
 
@@ -22,8 +22,8 @@ platform:
 build_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
   - go get -d -v ./...
-  - go build -v
+  - go build
 
 test_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
-  - go test -cover -race
+  - go test -cover
