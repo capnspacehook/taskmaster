@@ -370,7 +370,7 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 				return err
 			}
 
-			parentFolder.SubFolders = append(parentFolder.SubFolders, *taskSubFolder)
+			parentFolder.SubFolders = append(parentFolder.SubFolders, taskSubFolder)
 
 			res, err = oleutil.CallMethod(taskFolder, "GetFolders", 0)
 			if err != nil {
