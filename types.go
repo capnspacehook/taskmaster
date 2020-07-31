@@ -306,6 +306,27 @@ const (
 	TASK_COMPATIBILITY_V2_4
 )
 
+func (c TaskCompatibility) String() string {
+	switch c {
+	case TASK_COMPATIBILITY_AT:
+		return "AT"
+	case TASK_COMPATIBILITY_V1:
+		return "v1.0"
+	case TASK_COMPATIBILITY_V2:
+		return "v2.0"
+	case TASK_COMPATIBILITY_V2_1:
+		return "v2.1"
+	case TASK_COMPATIBILITY_V2_2:
+		return "v2.2"
+	case TASK_COMPATIBILITY_V2_3:
+		return "v2.3"
+	case TASK_COMPATIBILITY_V2_4:
+		return "v2.4"
+	default:
+		return ""
+	}
+}
+
 // TaskCreationFlags specifies how a task will be created.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/ne-taskschd-task_creation
 type TaskCreationFlags uint
