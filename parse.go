@@ -62,7 +62,7 @@ func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {
 	missedRuns := uint(oleutil.MustGetProperty(task, "NumberOfMissedRuns").Val)
 	nextRunTime := oleutil.MustGetProperty(task, "NextRunTime").Value().(time.Time)
 	lastRunTime := oleutil.MustGetProperty(task, "LastRunTime").Value().(time.Time)
-	lastTaskResult := uint(oleutil.MustGetProperty(task, "LastTaskResult").Val)
+	lastTaskResult := TaskResult(oleutil.MustGetProperty(task, "LastTaskResult").Val)
 
 	definition := oleutil.MustGetProperty(task, "Definition").ToIDispatch()
 	defer definition.Release()

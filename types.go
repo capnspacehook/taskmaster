@@ -5,6 +5,7 @@ package taskmaster
 import (
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-ole/go-ole"
@@ -555,6 +556,57 @@ func (t TaskTriggerType) String() string {
 	}
 }
 
+type TaskResult uint32
+
+const (
+	SCHED_S_SUCCESS    TaskResult = 0x0
+	SCHED_S_TASK_READY TaskResult = iota + 0x00041300
+	SCHED_S_TASK_RUNNING
+	SCHED_S_TASK_DISABLED
+	SCHED_S_TASK_HAS_NOT_RUN
+	SCHED_S_TASK_NO_MORE_RUNS
+	SCHED_S_TASK_NOT_SCHEDULED
+	SCHED_S_TASK_TERMINATED
+	SCHED_S_TASK_NO_VALID_TRIGGERS
+	SCHED_S_EVENT_TRIGGER
+	SCHED_S_SOME_TRIGGERS_FAILED TaskResult = 0x0004131B
+	SCHED_S_BATCH_LOGON_PROBLEM  TaskResult = 0x0004131C
+	SCHED_S_TASK_QUEUED          TaskResult = 0x00041325
+)
+
+func (r TaskResult) String() string {
+	switch r {
+	case SCHED_S_SUCCESS:
+		return "Completed successfully"
+	case SCHED_S_TASK_READY:
+		return "Ready"
+	case SCHED_S_TASK_RUNNING:
+		return "Currently running"
+	case SCHED_S_TASK_DISABLED:
+		return "Disabled"
+	case SCHED_S_TASK_HAS_NOT_RUN:
+		return "Has not been run yet"
+	case SCHED_S_TASK_NO_MORE_RUNS:
+		return "No more runs scheduled"
+	case SCHED_S_TASK_NOT_SCHEDULED:
+		return "One or more of the properties that are needed to run this task on a schedule have not been set"
+	case SCHED_S_TASK_TERMINATED:
+		return "Terminated by user"
+	case SCHED_S_TASK_NO_VALID_TRIGGERS:
+		return "Either the task has no triggers or the existing triggers are disabled or not set"
+	case SCHED_S_EVENT_TRIGGER:
+		return "Event triggers do not have set run times"
+	case SCHED_S_SOME_TRIGGERS_FAILED:
+		return "Not all specified triggers will start the task"
+	case SCHED_S_BATCH_LOGON_PROBLEM:
+		return "May fail to start unless batch logon privilege is enabled for the task principal"
+	case SCHED_S_TASK_QUEUED:
+		return "Queued"
+	default:
+		return syscall.Errno(r).Error()
+	}
+}
+
 type TaskService struct {
 	taskServiceObj        *ole.IDispatch
 	rootFolderObj         *ole.IDispatch
@@ -595,11 +647,11 @@ type RegisteredTask struct {
 	Path           string // the path to where the registered task is stored
 	Definition     Definition
 	Enabled        bool
-	State          TaskState // the operational state of the registered task
-	MissedRuns     uint      // the number of times the registered task has missed a scheduled run
-	NextRunTime    time.Time // the time when the registered task is next scheduled to run
-	LastRunTime    time.Time // the time the registered task was last run
-	LastTaskResult uint      // the results that were returned the last time the registered task was run
+	State          TaskState  // the operational state of the registered task
+	MissedRuns     uint       // the number of times the registered task has missed a scheduled run
+	NextRunTime    time.Time  // the time when the registered task is next scheduled to run
+	LastRunTime    time.Time  // the time the registered task was last run
+	LastTaskResult TaskResult // the results that were returned the last time the registered task was run
 }
 
 // Definition defines all the components of a task, such as the task settings, triggers, actions, and registration information
