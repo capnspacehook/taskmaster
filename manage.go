@@ -99,13 +99,13 @@ func ConnectWithOptions(serverName, domain, username, password string) (*TaskSer
 		if err != nil {
 			return nil, err
 		}
-		username = strings.Split(currentUser.Username, "\\")[1]
+		username = strings.Split(currentUser.Username, `\`)[1]
 	}
 	taskService.connectedDomain = domain
 	taskService.connectedComputerName = serverName
 	taskService.connectedUser = username
 
-	res, err := oleutil.CallMethod(taskService.taskServiceObj, "GetFolder", "\\")
+	res, err := oleutil.CallMethod(taskService.taskServiceObj, "GetFolder", `\`)
 	if err != nil {
 		return nil, fmt.Errorf("error getting the root folder: %v", err)
 	}
@@ -273,7 +273,7 @@ func (t *TaskService) GetRegisteredTask(path string) (*RegisteredTask, error) {
 // GetTaskFolders enumerates the Task Schedule database for all task folders and currently
 // registered tasks.
 func (t TaskService) GetTaskFolders() (*TaskFolder, error) {
-	return t.GetTaskFolder("\\")
+	return t.GetTaskFolder(`\`)
 }
 
 // GetTaskFolder enumerates the Task Schedule database for all task sub folders and currently
@@ -285,7 +285,7 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 	}
 
 	var topFolderObj *ole.IDispatch
-	if path == "\\" {
+	if path == `\` {
 		topFolderObj = t.rootFolderObj
 	} else {
 		topFolder, err := oleutil.CallMethod(t.taskServiceObj, "GetFolder", path)
@@ -310,7 +310,7 @@ func (t TaskService) GetTaskFolder(path string) (*TaskFolder, error) {
 	}
 	topFolderTaskCollection := res.ToIDispatch()
 	defer topFolderTaskCollection.Release()
-	var topFolder TaskFolder
+	topFolder := TaskFolder{Path: `\`}
 	err = oleutil.ForEach(topFolderTaskCollection, func(v *ole.VARIANT) error {
 		task := v.ToIDispatch()
 
@@ -406,7 +406,7 @@ func (t TaskService) NewTaskDefinition() Definition {
 	newDef.Principal.LogonType = TASK_LOGON_INTERACTIVE_TOKEN
 	newDef.Principal.RunLevel = TASK_RUNLEVEL_LUA
 
-	newDef.RegistrationInfo.Author = t.connectedDomain + "\\" + t.connectedUser
+	newDef.RegistrationInfo.Author = t.connectedDomain + `\` + t.connectedUser
 	newDef.RegistrationInfo.Date = time.Now()
 
 	newDef.Settings.AllowDemandStart = true
@@ -451,7 +451,7 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 		return nil, false, err
 	}
 
-	nameIndex := strings.LastIndex(path, "\\")
+	nameIndex := strings.LastIndex(path, `\`)
 	folderPath := path[:nameIndex]
 
 	if !t.taskFolderExist(folderPath) {
@@ -531,7 +531,7 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 func (t *TaskService) modifyTask(path string, newTaskDef Definition, username, password string, logonType TaskLogonType, flags TaskCreationFlags) (*ole.IDispatch, error) {
 	// set default UserID if UserID and GroupID both aren't set
 	if newTaskDef.Principal.UserID == "" && newTaskDef.Principal.GroupID == "" {
-		newTaskDef.Principal.UserID = t.connectedDomain + "\\" + t.connectedUser
+		newTaskDef.Principal.UserID = t.connectedDomain + `\` + t.connectedUser
 	}
 
 	res, err := oleutil.CallMethod(t.taskServiceObj, "NewTask", 0)
