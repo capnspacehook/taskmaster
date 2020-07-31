@@ -548,7 +548,7 @@ type TaskFolder struct {
 	isReleased      bool
 	Name            string
 	Path            string
-	SubFolders      []TaskFolder
+	SubFolders      []*TaskFolder
 	RegisteredTasks RegisteredTaskCollection
 }
 
