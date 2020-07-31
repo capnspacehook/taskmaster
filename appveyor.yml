@@ -7,6 +7,10 @@ clone_folder: c:\gopath\src\github.com\capnspacehook\taskmaster
 environment:
   GOPATH: c:\gopath
   matrix:
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    GOARCH: 386
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    GOARCH: amd64
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
     GOARCH: 386
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
