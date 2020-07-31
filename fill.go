@@ -17,7 +17,7 @@ func fillDefinitionObj(definition Definition, definitionObj *ole.IDispatch) erro
 	oleutil.MustPutProperty(actionsObj, "Context", definition.Context)
 	err = fillActionsObj(definition.Actions, actionsObj)
 	if err != nil {
-		return fmt.Errorf("error filling IAction objects: %s", err)
+		return fmt.Errorf("error filling IAction objects: %v", err)
 	}
 
 	oleutil.MustPutProperty(definitionObj, "Data", definition.Data)
@@ -38,7 +38,7 @@ func fillDefinitionObj(definition Definition, definitionObj *ole.IDispatch) erro
 	defer triggersObj.Release()
 	err = fillTaskTriggersObj(definition.Triggers, triggersObj)
 	if err != nil {
-		return fmt.Errorf("error filling ITrigger objects: %s", err)
+		return fmt.Errorf("error filling ITrigger objects: %v", err)
 	}
 
 	return nil
@@ -48,7 +48,7 @@ func fillActionsObj(actions []Action, actionsObj *ole.IDispatch) error {
 		actionType := action.GetType()
 		res, err := oleutil.CallMethod(actionsObj, "Create", uint(actionType))
 		if err != nil {
-			return fmt.Errorf("error creating IAction object: %v", err)
+			return fmt.Errorf("error creating IAction object: %v", getTaskSchedulerError(err))
 		}
 		actionObj := res.ToIDispatch()
 		defer actionObj.Release()
@@ -134,7 +134,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 	for _, trigger := range triggers {
 		res, err := oleutil.CallMethod(triggersObj, "Create", uint(trigger.GetType()))
 		if err != nil {
-			return fmt.Errorf("error creating ITrigger object: %v", err)
+			return fmt.Errorf("error creating ITrigger object: %v", getTaskSchedulerError(err))
 		}
 		triggerObj := res.ToIDispatch()
 		defer triggerObj.Release()
@@ -176,7 +176,7 @@ func fillTaskTriggersObj(triggers []Trigger, triggersObj *ole.IDispatch) error {
 			for name, value := range t.ValueQueries {
 				_, err = oleutil.CallMethod(valueQueriesObj, "Create", name, value)
 				if err != nil {
-					return fmt.Errorf("error creating value %s: %v", name, err)
+					return fmt.Errorf("error creating value %s: %v", name, getTaskSchedulerError(err))
 				}
 			}
 		case IdleTrigger:

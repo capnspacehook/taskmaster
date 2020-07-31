@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-ole/go-ole"
@@ -72,6 +73,18 @@ func PeriodToString(p period.Period) string {
 	return s
 }
 
-func GetOLEErrorCode(err error) uint32 {
+func getTaskSchedulerError(err error) error {
+	errCode := getOLEErrorCode(err)
+	switch errCode {
+	case 50:
+		return errors.New("error connecting to the Task Scheduler service: cannot connect to the XP or server 2003 computer")
+	case 0x80070032, 53:
+		return errors.New("error connecting to the Task Scheduler service: cannot connect to target computer")
+	default:
+		return syscall.Errno(errCode)
+	}
+}
+
+func getOLEErrorCode(err error) uint32 {
 	return err.(*ole.OleError).SubError().(ole.EXCEPINFO).SCODE()
 }

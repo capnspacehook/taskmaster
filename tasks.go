@@ -22,7 +22,7 @@ func (d *Definition) AddTrigger(trigger Trigger) {
 func (r RunningTask) Refresh() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Refresh")
 	if err != nil {
-		return fmt.Errorf("error calling Refresh on %s IRunningTask: %s", r.Path, err)
+		return fmt.Errorf("error refreshing running task %s: %v", r.Path, getTaskSchedulerError(err))
 	}
 
 	return nil
@@ -33,7 +33,7 @@ func (r RunningTask) Refresh() error {
 func (r *RunningTask) Stop() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Stop")
 	if err != nil {
-		return fmt.Errorf("error calling Stop on %s IRunningTask: %s", r.Path, err)
+		return fmt.Errorf("error stopping running task %s: %v", r.Path, getTaskSchedulerError(err))
 	}
 
 	r.Release()
@@ -62,12 +62,12 @@ func (r *RegisteredTask) Run(args []string) (RunningTask, error) {
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-runex
 func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int, user string) (RunningTask, error) {
 	if !r.Enabled {
-		return RunningTask{}, fmt.Errorf("error calling RunEx on %s IRegisteredTask: cannot run a disabled task", r.Path)
+		return RunningTask{}, fmt.Errorf("error running registered task %s: cannot run a disabled task", r.Path)
 	}
 
 	runningTaskObj, err := oleutil.CallMethod(r.taskObj, "RunEx", args, int(flags), sessionID, user)
 	if err != nil {
-		return RunningTask{}, fmt.Errorf("error calling RunEx on %s IRegisteredTask: %s", r.Path, err)
+		return RunningTask{}, fmt.Errorf("error running registered task %s: %v", r.Path, getTaskSchedulerError(err))
 	}
 
 	return parseRunningTask(runningTaskObj.ToIDispatch())
@@ -79,7 +79,7 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
 	if err != nil {
-		return nil, fmt.Errorf("error calling GetInstances on %s IRegisteredTask: %s", r.Path, err)
+		return nil, fmt.Errorf("error getting instances of registered task %s: %v", r.Path, getTaskSchedulerError(err))
 	}
 
 	runningTasksObj := runningTasks.ToIDispatch()
@@ -108,7 +108,7 @@ func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 func (r *RegisteredTask) Stop() error {
 	_, err := oleutil.CallMethod(r.taskObj, "Stop", 0)
 	if err != nil {
-		return err
+		return fmt.Errorf("error stopping registered task %s: %v", r.Path, getTaskSchedulerError(err))
 	}
 
 	return nil

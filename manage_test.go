@@ -254,8 +254,8 @@ func TestDeleteTask(t *testing.T) {
 	}
 
 	deletedTask, err := taskService.GetRegisteredTask("\\Taskmaster\\TestTask")
-	if err != nil {
-		t.Error(err)
+	if err == nil {
+		t.Error("task shouldn't still exist")
 	}
 	deletedTask.Release()
 }
@@ -290,11 +290,11 @@ func TestDeleteFolder(t *testing.T) {
 		t.Error(err)
 	}
 	taskmasterFolder, err := taskService.GetTaskFolder("\\Taskmaster")
-	if err != nil {
-		t.Error(err)
+	if err == nil {
+		t.Error("folder shouldn't exist")
 	}
 	if taskmasterFolder.Name != "" {
-		t.Error("folder shouldn't exist")
+		t.Error("folder struct should be defaultly constructed")
 	}
 	for _, task := range tasks {
 		if strings.Split(task.Path, "\\")[1] == "Taskmaster" {
