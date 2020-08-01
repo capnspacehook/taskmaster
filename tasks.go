@@ -3,6 +3,7 @@
 package taskmaster
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-ole/go-ole"
@@ -74,7 +75,6 @@ func (r *RegisteredTask) RunEx(args []string, flags TaskRunFlags, sessionID int,
 }
 
 // GetInstances returns all of the currently running instances of a registered task.
-// The returned slice may contain nil entries if tasks are stopped while they are being parsed.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-getinstances
 func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 	runningTasks, err := oleutil.CallMethod(r.taskObj, "GetInstances", 0)
@@ -86,17 +86,24 @@ func (r *RegisteredTask) GetInstances() (RunningTaskCollection, error) {
 	defer runningTasksObj.Release()
 	var parsedRunningTasks RunningTaskCollection
 
-	oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
+	err = oleutil.ForEach(runningTasksObj, func(v *ole.VARIANT) error {
 		runningTaskObj := v.ToIDispatch()
 
 		parsedRunningTask, err := parseRunningTask(runningTaskObj)
 		if err != nil {
+			if errors.Is(err, ErrRunningTaskCompleted) {
+				return nil
+			}
 			return fmt.Errorf("error parsing running task: %v", err)
 		}
+
 		parsedRunningTasks = append(parsedRunningTasks, parsedRunningTask)
 
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return parsedRunningTasks, nil
 }
