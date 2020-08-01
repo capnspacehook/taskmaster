@@ -417,11 +417,11 @@ func (t TaskLogonType) String() string {
 type TaskRunFlags uint
 
 const (
-	TASK_RUN_NO_FLAGS           TaskRunFlags = 1 << iota // the task is run with all flags ignored
-	TASK_RUN_AS_SELF                                     // the task is run as the user who is calling the Run method
-	TASK_RUN_IGNORE_CONSTRAINTS                          // the task is run regardless of constraints such as "do not run on batteries" or "run only if idle"
-	TASK_RUN_USE_SESSION_ID                              // the task is run using a terminal server session identifier
-	TASK_RUN_USER_SID                                    // the task is run using a security identifier
+	TASK_RUN_NO_FLAGS           TaskRunFlags = iota // the task is run with all flags ignored
+	TASK_RUN_AS_SELF                                // the task is run as the user who is calling the Run method
+	TASK_RUN_IGNORE_CONSTRAINTS                     // the task is run regardless of constraints such as "do not run on batteries" or "run only if idle"
+	TASK_RUN_USE_SESSION_ID                         // the task is run using a terminal server session identifier
+	TASK_RUN_USER_SID                               // the task is run using a security identifier
 )
 
 // TaskRunLevel specifies whether the task will be run with full permissions or not.

@@ -15,65 +15,61 @@ func TestRelease(t *testing.T) {
 func TestRunRegisteredTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTask, err := testTask.Run([]string{"0"})
+	runningTask, err := testTask.Run("3")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	time.Sleep(500 * time.Millisecond)
 	runningTask.Release()
 }
 
 func TestRefreshRunningTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTask, err := testTask.Run([]string{"1"})
+	runningTask, err := testTask.Run("3")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-
 	err = runningTask.Refresh()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	// make sure above running task is stopped
-	time.Sleep(time.Second)
 	runningTask.Release()
 }
 
 func TestStopRunningTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
-	runningTask, err := testTask.Run([]string{"9001"})
+	runningTask, err := testTask.Run("9001")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	err = runningTask.Stop()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 }
 
 func TestGetInstancesRegisteredTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
@@ -83,43 +79,43 @@ func TestGetInstancesRegisteredTask(t *testing.T) {
 	// create a few running tasks so that there will be multiple instances
 	// of the registered task running
 	for i := range runningTasks {
-		runningTasks[i], err = testTask.Run([]string{"3"})
+		runningTasks[i], err = testTask.Run("3")
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	instances, err := testTask.GetInstances()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if len(instances) != 5 {
-		t.Errorf("should have 5 instances, got %d instead", len(instances))
+		t.Fatalf("should have 5 instances, got %d instead", len(instances))
 	}
 
-	time.Sleep(3 * time.Second)
-	runningTasks.Release()
+	runningTasks.Stop()
 	instances.Release()
 }
 
 func TestStopRegisteredTask(t *testing.T) {
 	taskService, err := Connect()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	testTask := createTestTask(taskService)
 	defer taskService.Disconnect()
 
 	for i := 0; i < 5; i++ {
-		_, err := testTask.Run([]string{"3"})
+		_, err := testTask.Run("3")
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 	}
 
 	err = testTask.Stop()
 	if err != nil {
-		t.Errorf("error stopping tasks: %v", err)
+		t.Fatalf("error stopping tasks: %v", err)
 	}
 }

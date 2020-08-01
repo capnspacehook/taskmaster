@@ -5,6 +5,7 @@ package taskmaster
 import (
 	"errors"
 	"fmt"
+	"syscall"
 	"time"
 
 	ole "github.com/go-ole/go-ole"
@@ -16,27 +17,27 @@ func parseRunningTask(task *ole.IDispatch) (RunningTask, error) {
 
 	currentAction, err := oleutil.GetProperty(task, "CurrentAction")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 	enginePID, err := oleutil.GetProperty(task, "EnginePid")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 	instanceGUID, err := oleutil.GetProperty(task, "InstanceGuid")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 	name, err := oleutil.GetProperty(task, "Name")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 	path, err := oleutil.GetProperty(task, "Path")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 	state, err := oleutil.GetProperty(task, "State")
 	if err != nil {
-		return RunningTask{}, err
+		return RunningTask{}, getRunningTaskError(err)
 	}
 
 	runningTask := RunningTask{
@@ -50,6 +51,15 @@ func parseRunningTask(task *ole.IDispatch) (RunningTask, error) {
 	}
 
 	return runningTask, nil
+}
+
+func getRunningTaskError(err error) error {
+	errCode := getOLEErrorCode(err)
+	if errCode == 0x8004130B {
+		return errors.New("the running task completed while it was getting parsed")
+	}
+
+	return syscall.Errno(errCode)
 }
 
 func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {

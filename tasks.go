@@ -53,8 +53,8 @@ func (r *RunningTask) Release() {
 // Run starts an instance of a registered task. If the task was started successfully,
 // a pointer to a running task will be returned.
 // https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-iregisteredtask-run
-func (r *RegisteredTask) Run(args []string) (RunningTask, error) {
-	return r.RunEx(args, TASK_RUN_AS_SELF, 0, "")
+func (r *RegisteredTask) Run(args ...string) (RunningTask, error) {
+	return r.RunEx(args, TASK_RUN_NO_FLAGS, 0, "")
 }
 
 // RunEx starts an instance of a registered task. If the task was started successfully,
@@ -125,6 +125,20 @@ func (r *RegisteredTask) Release() {
 
 // RunningTaskCollection is a collection of running tasks.
 type RunningTaskCollection []RunningTask
+
+// Stop kills and frees all the running tasks COM objects in the
+// collection. If an error is encountered while stopping a running
+// task, Stop returns the error without attempting to stop any
+// other running tasks in the collection.
+func (r RunningTaskCollection) Stop() error {
+	for _, runningTask := range r {
+		if err := runningTask.Stop(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // Release frees all the running task COM objects in the collection.
 // Must be called before program termination to avoid memory leaks.
