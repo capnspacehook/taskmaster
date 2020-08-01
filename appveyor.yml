@@ -25,7 +25,6 @@ platform:
 
 build_script:
   - cd c:\gopath\src\github.com\capnspacehook\taskmaster
-  - go get -d -v ./...
   - go build
 
 test_script:
