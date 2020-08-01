@@ -5,7 +5,6 @@ package taskmaster
 import (
 	"errors"
 	"fmt"
-	"syscall"
 	"time"
 
 	ole "github.com/go-ole/go-ole"
@@ -51,15 +50,6 @@ func parseRunningTask(task *ole.IDispatch) (RunningTask, error) {
 	}
 
 	return runningTask, nil
-}
-
-func getRunningTaskError(err error) error {
-	errCode := getOLEErrorCode(err)
-	if errCode == 0x8004130B {
-		return errors.New("the running task completed while it was getting parsed")
-	}
-
-	return syscall.Errno(errCode)
 }
 
 func parseRegisteredTask(task *ole.IDispatch) (RegisteredTask, string, error) {

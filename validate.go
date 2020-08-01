@@ -13,7 +13,7 @@ func validateDefinition(def Definition) error {
 	var err error
 
 	if def.Actions == nil {
-		return errors.New("definition must have at least one action")
+		return ErrNoActions
 	}
 	if err = validateActions(def.Actions); err != nil {
 		return err
@@ -23,7 +23,7 @@ func validateDefinition(def Definition) error {
 	}
 
 	if def.Principal.UserID != "" && def.Principal.GroupID != "" {
-		return errors.New("both UserId and GroupId are defined for the principal; they are mutually exclusive")
+		return ErrInvalidPrinciple
 	}
 
 	return nil

@@ -237,7 +237,7 @@ func (t *TaskService) GetRegisteredTasks() (RegisteredTaskCollection, error) {
 // the registered task.
 func (t *TaskService) GetRegisteredTask(path string) (RegisteredTask, error) {
 	if path[0] != '\\' {
-		return RegisteredTask{}, errors.New(`path must start with root folder "\"`)
+		return RegisteredTask{}, ErrInvalidPath
 	}
 
 	taskObj, err := oleutil.CallMethod(t.rootFolderObj, "GetTask", path)
@@ -264,7 +264,7 @@ func (t TaskService) GetTaskFolders() (TaskFolder, error) {
 // returned in place of the task folder.
 func (t TaskService) GetTaskFolder(path string) (TaskFolder, error) {
 	if path[0] != '\\' {
-		return TaskFolder{}, errors.New("path must start with root folder '\\'")
+		return TaskFolder{}, ErrInvalidPath
 	}
 
 	var topFolderObj *ole.IDispatch
@@ -422,7 +422,7 @@ func (t *TaskService) CreateTaskEx(path string, newTaskDef Definition, username,
 	var err error
 
 	if path[0] != '\\' {
-		return RegisteredTask{}, false, errors.New("path must start with root folder '\\'")
+		return RegisteredTask{}, false, ErrInvalidPath
 	} else if err = validateDefinition(newTaskDef); err != nil {
 		return RegisteredTask{}, false, err
 	}
@@ -475,13 +475,9 @@ func (t *TaskService) UpdateTaskEx(path string, newTaskDef Definition, username,
 	var err error
 
 	if path[0] != '\\' {
-		return RegisteredTask{}, errors.New("path must start with root folder '\\'")
+		return RegisteredTask{}, ErrInvalidPath
 	} else if err = validateDefinition(newTaskDef); err != nil {
 		return RegisteredTask{}, err
-	}
-
-	if !t.registeredTaskExist(path) {
-		return RegisteredTask{}, errors.New("registered task doesn't exist")
 	}
 
 	newTaskObj, err := t.modifyTask(path, newTaskDef, username, password, logonType, TASK_UPDATE)
@@ -531,7 +527,7 @@ func (t *TaskService) DeleteFolder(path string, deleteRecursively bool) (bool, e
 	var err error
 
 	if path[0] != '\\' {
-		return false, errors.New("path must start with root folder '\\'")
+		return false, ErrInvalidPath
 	}
 
 	taskFolder, err := oleutil.CallMethod(t.taskServiceObj, "GetFolder", path)
@@ -637,11 +633,7 @@ func (t *TaskService) DeleteTask(path string) error {
 	var err error
 
 	if path[0] != '\\' {
-		return errors.New("path must start with root folder '\\'")
-	}
-
-	if !t.registeredTaskExist(path) {
-		return errors.New("registered task doesn't exist")
+		return ErrInvalidPath
 	}
 
 	_, err = oleutil.CallMethod(t.rootFolderObj, "DeleteTask", path, 0)
