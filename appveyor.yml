@@ -1,6 +1,6 @@
 version: "1.0.{build}"
 
-stack: go 1.14
+stack: go 1.15
 
 clone_folder: c:\gopath\src\github.com\capnspacehook\taskmaster
 
