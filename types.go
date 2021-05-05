@@ -3,6 +3,7 @@
 package taskmaster
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"syscall"
@@ -71,11 +72,8 @@ const (
 func (d DayInterval) String() string {
 	if d == EveryDay {
 		return "Every day"
-	} else if d == EveryOtherDay {
-		return "Every other day"
 	}
-
-	return "Invalid day interval"
+	return fmt.Sprintf("Every %d days", w)
 }
 
 // DayOfMonth is a day of a month.
@@ -260,11 +258,8 @@ const (
 func (w WeekInterval) String() string {
 	if w == EveryWeek {
 		return "Every week"
-	} else if w == EveryOtherWeek {
-		return "Every other week"
 	}
-
-	return "Invalid week interval"
+	return fmt.Sprintf("Every %d weeks", w)
 }
 
 // TaskActionType specifies the type of a task action.
