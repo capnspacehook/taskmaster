@@ -15,23 +15,32 @@ import (
 	"github.com/rickb777/date/period"
 )
 
+// S_FALSE is returned by CoInitialize if it was already called on this thread.
+const S_FALSE = 0x00000001
+
 func (t *TaskService) initialize() error {
 	var err error
 
 	err = ole.CoInitialize(0)
 	if err != nil {
-		return err
+		code := err.(*ole.OleError).Code()
+		if code != ole.S_OK && code != S_FALSE {
+			return err
+		}
 	}
 
 	schedClassID, err := ole.ClassIDFrom("Schedule.Service.1")
 	if err != nil {
+		defer ole.CoUninitialize()
 		return getTaskSchedulerError(err)
 	}
 	taskSchedulerObj, err := ole.CreateInstance(schedClassID, nil)
 	if err != nil {
+		defer ole.CoUninitialize()
 		return getTaskSchedulerError(err)
 	}
 	if taskSchedulerObj == nil {
+		defer ole.CoUninitialize()
 		return errors.New("Could not create ITaskService object")
 	}
 	defer taskSchedulerObj.Release()
