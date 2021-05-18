@@ -31,16 +31,16 @@ func (t *TaskService) initialize() error {
 
 	schedClassID, err := ole.ClassIDFrom("Schedule.Service.1")
 	if err != nil {
-		defer ole.CoUninitialize()
+		ole.CoUninitialize()
 		return getTaskSchedulerError(err)
 	}
 	taskSchedulerObj, err := ole.CreateInstance(schedClassID, nil)
 	if err != nil {
-		defer ole.CoUninitialize()
+		ole.CoUninitialize()
 		return getTaskSchedulerError(err)
 	}
 	if taskSchedulerObj == nil {
-		defer ole.CoUninitialize()
+		ole.CoUninitialize()
 		return errors.New("Could not create ITaskService object")
 	}
 	defer taskSchedulerObj.Release()
